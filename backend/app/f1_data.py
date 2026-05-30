@@ -1,11 +1,13 @@
 """
-f1_data.py — Lógica principal para obtener y procesar datos de temporadas F1.
+f1_data.py — Obtención y procesamiento de datos de temporadas F1.
 
 Fuente: OpenF1 API (https://api.openf1.org/v1/)
 Cobertura: temporadas 2023 en adelante.
 
-Para temporadas anteriores a 2023 los datos pueden estar incompletos
-o no disponibles según la cobertura de OpenF1.
+Endpoints utilizados:
+  - /sessions        → sesiones de carrera por año
+  - /session_result  → resultados finales de cada carrera (posición + puntos)
+  - /drivers         → metadata de pilotos (nombre, equipo, color)
 """
 
 import json
@@ -19,13 +21,6 @@ logger = logging.getLogger(__name__)
 
 OPENF1_BASE = "https://api.openf1.org/v1"
 
-# Tabla de puntos post-2010
-POINTS_TABLE = {
-    1: 25, 2: 18, 3: 15, 4: 12, 5: 10,
-    6: 8,  7: 6,  8: 4,  9: 2,  10: 1,
-}
-FASTEST_LAP_BONUS = 1  # Aplica desde 2019, solo para top-10
-
 # Colores de respaldo por nombre de equipo (cuando OpenF1 no entrega team_colour)
 TEAM_COLORS_FALLBACK = {
     "red bull racing":   "#3671C6",
@@ -33,16 +28,17 @@ TEAM_COLORS_FALLBACK = {
     "ferrari":           "#E8002D",
     "mclaren":           "#FF8000",
     "alpine":            "#FF87BC",
+    "alpine f1 team":    "#FF87BC",
     "aston martin":      "#229971",
     "williams":          "#64C4FF",
     "rb":                "#6692FF",
+    "rb f1 team":        "#6692FF",
     "kick sauber":       "#52E252",
+    "haas":              "#B6BABD",
     "haas f1 team":      "#B6BABD",
     "alphatauri":        "#5E8FAA",
     "alfa romeo":        "#900000",
-    "renault":           "#FFF500",
     "racing point":      "#F596C8",
-    "force india":       "#F596C8",
 }
 
 FALLBACK_COLORS = [
@@ -55,16 +51,21 @@ FALLBACK_COLORS = [
 # Utilidades HTTP
 # ---------------------------------------------------------------------------
 
-def _get(url: str, params: dict = None, retries: int = 3, backoff: float = 1.5) -> any:
-    """GET con reintentos y backoff exponencial."""
+def _get(url: str, params: dict = None, retries: int = 3, backoff: float = 2.0) -> any:
+    """GET con reintentos y backoff exponencial. Respeta el rate limit con espera mayor en 429."""
     for attempt in range(retries):
         try:
             resp = requests.get(url, params=params, timeout=20)
+            if resp.status_code == 429:
+                wait = backoff ** (attempt + 2)  # espera más larga para rate limit
+                logger.warning("Rate limit (429), esperando %.1fs antes de reintentar…", wait)
+                time.sleep(wait)
+                continue
             resp.raise_for_status()
             return resp.json()
         except requests.RequestException as exc:
             if attempt == retries - 1:
-                logger.error("Request fallida definitivamente: %s %s", url, exc)
+                logger.error("Request fallida definitivamente: %s — %s", url, exc)
                 raise
             wait = backoff ** attempt
             logger.warning("Request fallida (%s), reintentando en %.1fs…", exc, wait)
@@ -76,72 +77,41 @@ def _get(url: str, params: dict = None, retries: int = 3, backoff: float = 1.5) 
 # ---------------------------------------------------------------------------
 
 def _fetch_sessions(year: int) -> list[dict]:
-    """Obtiene todas las sesiones de carrera (Race) del año, ordenadas por fecha."""
-    logger.info("OpenF1: obteniendo sesiones de carrera para %d…", year)
+    """Obtiene todas las sesiones de carrera del año, ordenadas por fecha."""
+    logger.info("Obteniendo sesiones de carrera para %d…", year)
     data = _get(f"{OPENF1_BASE}/sessions", params={
         "year": year,
         "session_type": "Race",
     })
     sessions = sorted(data, key=lambda s: s.get("date_start", ""))
-    logger.info("  → %d sesiones de carrera encontradas", len(sessions))
+    logger.info("  → %d carreras encontradas", len(sessions))
     return sessions
 
 
-def _fetch_positions(session_key: int) -> dict[int, int]:
+def _fetch_session_result(session_key: int) -> list[dict]:
     """
-    Obtiene la posición final de cada piloto en la sesión.
-    Retorna dict driver_number → position.
+    Obtiene los resultados finales de una carrera vía /session_result.
+    Retorna lista de {driver_number, position, points, ...}.
     """
-    data = _get(f"{OPENF1_BASE}/position", params={"session_key": session_key})
-
-    # Quedarse con la última entrada por piloto (posición final)
-    latest: dict[int, dict] = {}
-    for entry in data:
-        drv = entry["driver_number"]
-        if drv not in latest or entry["date"] > latest[drv]["date"]:
-            latest[drv] = entry
-
-    return {drv: entry["position"] for drv, entry in latest.items()}
+    data = _get(f"{OPENF1_BASE}/session_result", params={"session_key": session_key})
+    return data or []
 
 
 def _fetch_drivers(session_key: int) -> dict[int, dict]:
     """
     Obtiene metadata de pilotos para una sesión.
-    Retorna dict driver_number → {name, team, color, code}.
+    Retorna dict driver_number → datos del piloto.
     """
     data = _get(f"{OPENF1_BASE}/drivers", params={"session_key": session_key})
-    return {d["driver_number"]: d for d in data}
-
-
-def _fetch_fastest_lap_driver(session_key: int) -> int | None:
-    """
-    Detecta qué piloto tuvo la vuelta más rápida de la carrera.
-    Retorna el driver_number del más rápido, o None si no se puede determinar.
-    """
-    try:
-        data = _get(f"{OPENF1_BASE}/laps", params={
-            "session_key": session_key,
-            "is_pit_out_lap": False,
-        })
-        if not data:
-            return None
-        best = min(
-            (d for d in data if d.get("lap_duration")),
-            key=lambda d: d["lap_duration"],
-            default=None,
-        )
-        return best["driver_number"] if best else None
-    except Exception as exc:
-        logger.warning("No se pudo obtener vueltas para sesión %d: %s", session_key, exc)
-        return None
+    return {d["driver_number"]: d for d in (data or [])}
 
 
 # ---------------------------------------------------------------------------
 # Procesamiento
 # ---------------------------------------------------------------------------
 
-def _resolve_team_color(team_name: str, team_colour_hex: str | None, color_index: int) -> str:
-    """Resuelve el color del equipo con prioridad: OpenF1 → fallback por nombre → fallback genérico."""
+def _resolve_color(team_name: str, team_colour_hex: str | None, color_index: int) -> str:
+    """Resuelve color con prioridad: OpenF1 hex → fallback por nombre → fallback genérico."""
     if team_colour_hex:
         return f"#{team_colour_hex}" if not team_colour_hex.startswith("#") else team_colour_hex
 
@@ -153,26 +123,18 @@ def _resolve_team_color(team_name: str, team_colour_hex: str | None, color_index
     return FALLBACK_COLORS[color_index % len(FALLBACK_COLORS)]
 
 
-def _points_for(position: int, is_fastest_lap: bool, year: int) -> float:
-    """Calcula puntos para una posición final."""
-    pts = POINTS_TABLE.get(position, 0)
-    if year >= 2019 and is_fastest_lap and position <= 10:
-        pts += FASTEST_LAP_BONUS
-    return pts
-
-
 # ---------------------------------------------------------------------------
 # Pipeline principal
 # ---------------------------------------------------------------------------
 
 def build_season_json(year: int) -> dict:
     """
-    Pipeline completo: obtiene datos de OpenF1, procesa y retorna
-    dict listo para serializar a JSON.
+    Pipeline completo: obtiene datos de OpenF1, calcula standings acumulados
+    y retorna dict listo para serializar a JSON.
     """
     sessions = _fetch_sessions(year)
     if not sessions:
-        raise ValueError(f"OpenF1: no se encontraron carreras para la temporada {year}")
+        raise ValueError(f"No se encontraron carreras para la temporada {year}")
 
     cumulative: dict[str, float] = {}
     driver_meta: dict[str, dict] = {}
@@ -184,27 +146,35 @@ def build_season_json(year: int) -> dict:
         session_key = session["session_key"]
         date        = (session.get("date_start") or "")[:10]
         location    = session.get("location", "")
-        country     = session.get("country_name", "")
         race_name   = f"{location} Grand Prix" if location else f"Race {i}"
 
         logger.info("  [%d/%d] %s (session_key=%d)", i, len(sessions), race_name, session_key)
 
-        positions   = _fetch_positions(session_key)
-        drivers     = _fetch_drivers(session_key)
-        fastest_drv = _fetch_fastest_lap_driver(session_key)
+        results = _fetch_session_result(session_key)
+        drivers = _fetch_drivers(session_key)
 
-        for drv_num, position in positions.items():
-            drv_info   = drivers.get(drv_num, {})
-            driver_id  = (drv_info.get("name_acronym") or f"DRV{drv_num}").lower()
-            full_name  = drv_info.get("full_name") or f"Driver {drv_num}"
-            team_name  = drv_info.get("team_name") or "Unknown"
+        if not results:
+            logger.warning("    Sin resultados para sesión %d — omitiendo", session_key)
+            continue
+
+        for entry in results:
+            drv_num   = entry.get("driver_number")
+            position  = entry.get("position")
+            points    = entry.get("points", 0) or 0  # puntos directamente desde OpenF1
+
+            if drv_num is None or position is None:
+                continue
+
+            drv_info    = drivers.get(drv_num, {})
+            driver_id   = (drv_info.get("name_acronym") or f"DRV{drv_num}").lower()
+            full_name   = drv_info.get("full_name") or f"Driver {drv_num}"
+            team_name   = drv_info.get("team_name") or "Unknown"
             team_colour = drv_info.get("team_colour")
             code        = drv_info.get("name_acronym") or driver_id.upper()[:3]
 
-            # Asignar color por equipo (una sola vez por equipo)
             team_key = team_name.lower().strip()
             if team_key not in team_color_map:
-                team_color_map[team_key] = _resolve_team_color(team_name, team_colour, color_index)
+                team_color_map[team_key] = _resolve_color(team_name, team_colour, color_index)
                 color_index += 1
 
             if driver_id not in driver_meta:
@@ -215,8 +185,7 @@ def build_season_json(year: int) -> dict:
                     "code":  code,
                 }
 
-            pts = _points_for(position, drv_num == fastest_drv, year)
-            cumulative[driver_id] = cumulative.get(driver_id, 0) + pts
+            cumulative[driver_id] = cumulative.get(driver_id, 0) + float(points)
 
         sorted_standings = sorted(cumulative.items(), key=lambda x: x[1], reverse=True)
 
@@ -229,8 +198,11 @@ def build_season_json(year: int) -> dict:
             "leader":    sorted_standings[0][0] if sorted_standings else None,
         })
 
-        # Pausa para no saturar la API
-        time.sleep(0.3)
+        # Pausa entre carreras para respetar el rate limit
+        time.sleep(1.0)
+
+    if not timeline:
+        raise ValueError(f"No se generó timeline para la temporada {year}")
 
     logger.info("Temporada %d: %d carreras procesadas", year, len(timeline))
     return {
