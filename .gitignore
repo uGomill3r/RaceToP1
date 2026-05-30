@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.env
+.venv
+env/
+venv/
+
+# Node / Svelte
+node_modules/
+frontend/.svelte-kit/
+frontend/build/
+
+# Data files (generated — commit only if you want them in the repo)
+# Comment out the next line to commit pre-generated JSON files
+# frontend/static/data/*.json
+
+# OS - macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# OS - Windows
+Thumbs.db
+
+# Editor - PyCharm / JetBrains
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Editor - VSCode
+.vscode/
+*.swp
+*.swo

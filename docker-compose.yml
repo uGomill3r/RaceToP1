@@ -1,0 +1,17 @@
+# docker-compose.yml
+services:
+  frontend-builder:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    command: sh -c "npm install --legacy-peer-deps && npm run build"
+    profiles: ["build"]
+
+  frontend:
+    image: nginx:alpine
+    ports:
+      - "5173:80"
+    volumes:
+      - ./frontend/build:/usr/share/nginx/html:ro
+    depends_on: []

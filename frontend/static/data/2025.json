@@ -1,0 +1,273 @@
+{
+  "year": 2025,
+  "totalRaces": 5,
+  "drivers": {
+    "norris": {
+      "name": "Lando Norris",
+      "color": "#FF8000",
+      "team": "McLaren",
+      "code": "NOR"
+    },
+    "max_verstappen": {
+      "name": "Max Verstappen",
+      "color": "#3671C6",
+      "team": "Red Bull",
+      "code": "VER"
+    },
+    "russell": {
+      "name": "George Russell",
+      "color": "#27F4D2",
+      "team": "Mercedes",
+      "code": "RUS"
+    },
+    "antonelli": {
+      "name": "Andrea Kimi Antonelli",
+      "color": "#27F4D2",
+      "team": "Mercedes",
+      "code": "ANT"
+    },
+    "albon": {
+      "name": "Alexander Albon",
+      "color": "#64C4FF",
+      "team": "Williams",
+      "code": "ALB"
+    },
+    "stroll": {
+      "name": "Lance Stroll",
+      "color": "#229971",
+      "team": "Aston Martin",
+      "code": "STR"
+    },
+    "hulkenberg": {
+      "name": "Nico Hülkenberg",
+      "color": "#9B0000",
+      "team": "Sauber",
+      "code": "HUL"
+    },
+    "leclerc": {
+      "name": "Charles Leclerc",
+      "color": "#E8002D",
+      "team": "Ferrari",
+      "code": "LEC"
+    },
+    "piastri": {
+      "name": "Oscar Piastri",
+      "color": "#FF8000",
+      "team": "McLaren",
+      "code": "PIA"
+    },
+    "hamilton": {
+      "name": "Lewis Hamilton",
+      "color": "#E8002D",
+      "team": "Ferrari",
+      "code": "HAM"
+    },
+    "gasly": {
+      "name": "Pierre Gasly",
+      "color": "#FF87BC",
+      "team": "Alpine F1 Team",
+      "code": "GAS"
+    },
+    "tsunoda": {
+      "name": "Yuki Tsunoda",
+      "color": "#6692FF",
+      "team": "RB F1 Team",
+      "code": "TSU"
+    },
+    "ocon": {
+      "name": "Esteban Ocon",
+      "color": "#B6BABD",
+      "team": "Haas F1 Team",
+      "code": "OCO"
+    },
+    "bearman": {
+      "name": "Oliver Bearman",
+      "color": "#B6BABD",
+      "team": "Haas F1 Team",
+      "code": "BEA"
+    },
+    "lawson": {
+      "name": "Liam Lawson",
+      "color": "#3671C6",
+      "team": "Red Bull",
+      "code": "LAW"
+    },
+    "bortoleto": {
+      "name": "Gabriel Bortoleto",
+      "color": "#9B0000",
+      "team": "Sauber",
+      "code": "BOR"
+    },
+    "alonso": {
+      "name": "Fernando Alonso",
+      "color": "#229971",
+      "team": "Aston Martin",
+      "code": "ALO"
+    },
+    "sainz": {
+      "name": "Carlos Sainz",
+      "color": "#64C4FF",
+      "team": "Williams",
+      "code": "SAI"
+    },
+    "doohan": {
+      "name": "Jack Doohan",
+      "color": "#FF87BC",
+      "team": "Alpine F1 Team",
+      "code": "DOO"
+    },
+    "hadjar": {
+      "name": "Isack Hadjar",
+      "color": "#6692FF",
+      "team": "RB F1 Team",
+      "code": "HAD"
+    }
+  },
+  "timeline": [
+    {
+      "race": 1,
+      "name": "Australian Grand Prix",
+      "circuit": "Albert Park Grand Prix Circuit",
+      "date": "2025-03-16",
+      "standings": {
+        "norris": 26,
+        "max_verstappen": 18,
+        "russell": 15,
+        "antonelli": 12,
+        "albon": 10,
+        "stroll": 8,
+        "hulkenberg": 6,
+        "leclerc": 4,
+        "piastri": 2,
+        "hamilton": 1,
+        "gasly": 0,
+        "tsunoda": 0,
+        "ocon": 0,
+        "bearman": 0,
+        "lawson": 0,
+        "bortoleto": 0,
+        "alonso": 0,
+        "sainz": 0,
+        "doohan": 0,
+        "hadjar": 0
+      },
+      "leader": "norris"
+    },
+    {
+      "race": 2,
+      "name": "Chinese Grand Prix",
+      "circuit": "Shanghai International Circuit",
+      "date": "2025-03-23",
+      "standings": {
+        "norris": 45,
+        "max_verstappen": 30,
+        "russell": 30,
+        "piastri": 27,
+        "antonelli": 20,
+        "albon": 16,
+        "stroll": 10,
+        "ocon": 10,
+        "hulkenberg": 6,
+        "leclerc": 4,
+        "bearman": 4,
+        "hamilton": 1,
+        "sainz": 1,
+        "gasly": 0,
+        "tsunoda": 0,
+        "lawson": 0,
+        "bortoleto": 0,
+        "alonso": 0,
+        "doohan": 0,
+        "hadjar": 0
+      },
+      "leader": "norris"
+    },
+    {
+      "race": 3,
+      "name": "Japanese Grand Prix",
+      "circuit": "Suzuka Circuit",
+      "date": "2025-04-06",
+      "standings": {
+        "norris": 63,
+        "max_verstappen": 55,
+        "piastri": 42,
+        "russell": 40,
+        "antonelli": 29,
+        "albon": 18,
+        "leclerc": 16,
+        "stroll": 10,
+        "ocon": 10,
+        "hamilton": 7,
+        "hulkenberg": 6,
+        "bearman": 5,
+        "hadjar": 4,
+        "sainz": 1,
+        "gasly": 0,
+        "tsunoda": 0,
+        "lawson": 0,
+        "bortoleto": 0,
+        "alonso": 0,
+        "doohan": 0
+      },
+      "leader": "norris"
+    },
+    {
+      "race": 4,
+      "name": "Bahrain Grand Prix",
+      "circuit": "Bahrain International Circuit",
+      "date": "2025-04-13",
+      "standings": {
+        "norris": 78,
+        "piastri": 68,
+        "max_verstappen": 63,
+        "russell": 58,
+        "antonelli": 29,
+        "leclerc": 28,
+        "albon": 18,
+        "hamilton": 17,
+        "ocon": 14,
+        "stroll": 10,
+        "hulkenberg": 6,
+        "gasly": 6,
+        "bearman": 6,
+        "hadjar": 4,
+        "tsunoda": 2,
+        "sainz": 1,
+        "lawson": 0,
+        "bortoleto": 0,
+        "alonso": 0,
+        "doohan": 0
+      },
+      "leader": "norris"
+    },
+    {
+      "race": 5,
+      "name": "Saudi Arabian Grand Prix",
+      "circuit": "Jeddah Corniche Circuit",
+      "date": "2025-04-20",
+      "standings": {
+        "piastri": 93,
+        "norris": 91,
+        "max_verstappen": 81,
+        "russell": 68,
+        "leclerc": 43,
+        "antonelli": 37,
+        "hamilton": 23,
+        "albon": 20,
+        "ocon": 14,
+        "stroll": 10,
+        "hulkenberg": 6,
+        "gasly": 6,
+        "bearman": 6,
+        "sainz": 5,
+        "hadjar": 5,
+        "tsunoda": 2,
+        "lawson": 0,
+        "bortoleto": 0,
+        "alonso": 0,
+        "doohan": 0
+      },
+      "leader": "piastri"
+    }
+  ]
+}
