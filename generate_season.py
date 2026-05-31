@@ -138,6 +138,10 @@ def build_season(year: int) -> dict:
         cons  = constructor_by_driver.get(did, {})
         cid   = cons.get("constructorId", "")
         cname = cons.get("name", "")
+        # Solo incluir pilotos que aparecieron en R1 con equipo F1 asignado.
+        # Los pilotos de F2/test no tienen entrada en constructor_by_driver.
+        if not cid:
+            continue
         driver_map[did] = {
             "name":  f"{fname} {lname}",
             "code":  code,
