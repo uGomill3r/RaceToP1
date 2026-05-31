@@ -1,9 +1,3 @@
 # Cloudflare Pages configuration
-# Docs: https://developers.cloudflare.com/pages/
-
-[build]
-  command = ""
-  publish = "frontend"
-
-[build.environment]
-  NODE_VERSION = "20"
+name = "RaceToP1"
+pages_build_output_dir = "frontend"
