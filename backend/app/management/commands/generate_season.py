@@ -17,7 +17,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 # Resolve the default output dir relative to this file's location
 _HERE = Path(__file__).resolve()
-_DEFAULT_OUTPUT = _HERE.parents[5] / "RaceToP1" / "frontend" / "static" / "data"
+_DEFAULT_OUTPUT = _HERE.parents[5] / "RaceToP1" / "frontend" / "data"
 
 
 class Command(BaseCommand):

@@ -32,8 +32,14 @@ _CACHE_DIR.mkdir(parents=True, exist_ok=True)
 fastf1.Cache.enable_cache(str(_CACHE_DIR))
 logger.info("FastF1 caché habilitado en: %s", _CACHE_DIR)
 
-# Año mínimo con soporte completo de la API oficial de F1 en FastF1
-_F1_API_MIN_YEAR = 2018
+# Año mínimo para usar la API oficial de F1 vía FastF1.
+# Se usa 2023 y no 2018 porque para temporadas 2018-2022 FastF1 intenta
+# combinar datos de la F1 API con Ergast/Jolpica. Si Jolpica no responde,
+# el campo Points se calcula internamente desde tiempos de vuelta y asigna
+# el punto de vuelta rápida siempre al 2do clasificado en lugar del piloto
+# real — produciendo standings incorrectos. Ergast directo sí tiene los
+# valores correctos para toda la historia.
+_F1_API_MIN_YEAR = 2023
 
 # Colores de respaldo por nombre de equipo (minúsculas, coincidencia parcial)
 TEAM_COLORS_FALLBACK = {
