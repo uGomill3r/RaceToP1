@@ -751,6 +751,7 @@
           <span class="section-title">DRIVERS</span>
           <div class="header-actions">
             <button id="btn-show-all" class="btn-sm" title="Show all drivers">All</button>
+            <button id="btn-hide-all" class="btn-sm" title="Hide all drivers">None</button>
             <button id="btn-battle" class="btn-battle" title="Toggle battle mode">⚔ BATTLE</button>
           </div>
         </div>
@@ -824,6 +825,7 @@
   const elLbBody        = document.getElementById('lb-body');
   const elRaceTag       = document.getElementById('race-tag');
   const elBtnShowAll    = document.getElementById('btn-show-all');
+  const elBtnHideAll    = document.getElementById('btn-hide-all');
   const elBtnBattle     = document.getElementById('btn-battle');
   const elBattleHint    = document.getElementById('battle-hint');
   const elDriversUl     = document.getElementById('drivers-ul');
@@ -1221,10 +1223,17 @@
     updateChart();
   }
 
+  function hideAll() {
+    hiddenDrivers = new Set(sortedDrivers.map(d => d.id));
+    renderDriverList();
+    updateChart();
+  }
+
   function updateBattleUI() {
     elBtnBattle.classList.toggle('active', battleMode);
     elBtnBattle.textContent = battleMode ? '✕ BATTLE' : '⚔ BATTLE';
     elBtnShowAll.style.display = battleMode ? 'none' : '';
+    elBtnHideAll.style.display = battleMode ? 'none' : '';
     elBattleTag.style.display = battleMode && battleDrivers.length === 2 ? '' : 'none';
 
     if (battleMode) {
@@ -1319,6 +1328,7 @@
   elScrubber.addEventListener('input', () => { stopPlayback(); seek(Number(elScrubber.value)); });
   elBtnBattle.addEventListener('click', toggleBattleMode);
   elBtnShowAll.addEventListener('click', showAll);
+  elBtnHideAll.addEventListener('click', hideAll);
 
   document.querySelectorAll('.btn-speed').forEach(btn => {
     btn.addEventListener('click', () => {
