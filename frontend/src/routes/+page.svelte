@@ -15,15 +15,13 @@
   let error = $state(null);
 
   // Estado de la línea de tiempo
-  let currentRace = $state(0);       // 0 = inicio, sin carrera seleccionada
+  let currentRace = $state(0);
   let isPlaying = $state(false);
   let playInterval = $state(null);
   let animationSpeed = $state(800);  // ms por carrera
 
-  // Visibilidad de pilotos — se guarda como Set internamente
-  // pero se expone como Array reactivo para que Svelte detecte cambios
-  let _hiddenDriversSet = $state(new Set());
-  let hiddenDrivers = $derived(Array.from(_hiddenDriversSet));
+  // Visibilidad de pilotos — Set reactivo: siempre se reasigna para que Svelte detecte el cambio
+  let hiddenDrivers = $state(new Set());
 
   // Modo batalla
   let battleMode = $state(false);
@@ -37,7 +35,7 @@
     error = null;
     stopPlayback();
     currentRace = 0;
-    _hiddenDriversSet = new Set();
+    hiddenDrivers = new Set();
     battleMode = false;
     battleDrivers = [];
 
@@ -92,11 +90,11 @@
         battleDrivers = [...battleDrivers, driverId];
       }
     } else {
-      // Crear nuevo Set para forzar reactividad vía la asignación
-      const next = new Set(_hiddenDriversSet);
+      // Crear un Set nuevo para que Svelte detecte el cambio por referencia
+      const next = new Set(hiddenDrivers);
       if (next.has(driverId)) next.delete(driverId);
       else next.add(driverId);
-      _hiddenDriversSet = next;
+      hiddenDrivers = next;
     }
   }
 
@@ -106,7 +104,7 @@
   }
 
   function showAll() {
-    _hiddenDriversSet = new Set();
+    hiddenDrivers = new Set();
   }
 
   // Clasificación actual en la carrera seleccionada

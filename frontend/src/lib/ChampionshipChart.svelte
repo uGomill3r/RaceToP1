@@ -4,7 +4,7 @@
   let {
     seasonData,
     currentRace,
-    hiddenDrivers,   // recibido como Array desde +page.svelte
+    hiddenDrivers,   // Set<string> — reasignado por referencia desde +page.svelte
     battleMode,
     battleDrivers,
     highlightedDriver,
@@ -15,19 +15,18 @@
   let chart = $state(null);
   let Chart;
 
-  // Build race labels from timeline
+  // Etiquetas de carrera derivadas del timeline
   let raceLabels = $derived(
     seasonData?.timeline.map(r => r.name.replace(' Grand Prix', '').replace(' Grand', '')) ?? []
   );
 
-  // Determine which drivers to show
-  // hiddenDrivers es un Array — se convierte a Set localmente para O(1) lookup
+  // Determinar si un piloto es visible
   function isDriverVisible(driverId) {
     if (battleMode) return battleDrivers.includes(driverId);
-    return !hiddenDrivers.includes(driverId);
+    return !hiddenDrivers.has(driverId);
   }
 
-  // Build chart datasets
+  // Construir los datasets del gráfico
   function buildDatasets() {
     if (!seasonData) return [];
 
@@ -38,7 +37,6 @@
       const isHighlighted = highlightedDriver === id;
       const isBattleSelected = battleMode && battleDrivers.includes(id);
 
-      // Puntos acumulados hasta currentRace
       const data = racesSlice.map(snap => snap.standings[id] ?? null);
 
       let opacity = 1;
@@ -94,16 +92,13 @@
     Chart = C;
     Chart.register(...registerables);
 
-    // Destruir instancia previa si existe
     if (chart) { chart.destroy(); chart = null; }
-
-    const datasets = buildDatasets();
 
     chart = new Chart(canvasEl, {
       type: 'line',
       data: {
         labels: raceLabels.slice(0, currentRace),
-        datasets,
+        datasets: buildDatasets(),
       },
       options: {
         responsive: true,
@@ -138,8 +133,7 @@
                 const driverId = item.dataset.label;
                 const driver = seasonData.drivers[driverId];
                 if (!driver || item.raw == null) return null;
-                const pts = item.raw;
-                return `  ${driver.code ?? driverId}  ${pts} pts`;
+                return `  ${driver.code ?? driverId}  ${item.raw} pts`;
               },
               labelColor: (item) => {
                 const driverId = item.dataset.label;
@@ -154,10 +148,7 @@
         },
         scales: {
           x: {
-            grid: {
-              color: 'rgba(30,45,66,0.6)',
-              lineWidth: 1,
-            },
+            grid: { color: 'rgba(30,45,66,0.6)', lineWidth: 1 },
             border: { color: '#1e2d42' },
             ticks: {
               color: '#4a5568',
@@ -168,10 +159,7 @@
             },
           },
           y: {
-            grid: {
-              color: 'rgba(30,45,66,0.4)',
-              lineWidth: 1,
-            },
+            grid: { color: 'rgba(30,45,66,0.4)', lineWidth: 1 },
             border: { color: '#1e2d42' },
             ticks: {
               color: '#4a5568',
@@ -187,10 +175,7 @@
           },
         },
         onHover: (event, elements) => {
-          if (!elements.length) {
-            onHoverDriver(null);
-            return;
-          }
+          if (!elements.length) { onHoverDriver(null); return; }
           const driverId = elements[0]?.element?.$context?.dataset?.label;
           if (driverId) onHoverDriver(driverId);
         },
@@ -213,19 +198,18 @@
     if (chart) chart.destroy();
   });
 
-  // ÚNICO $effect — reinicializa solo cuando cambia seasonData (nueva temporada),
-  // actualiza datasets cuando cambian los controles de visualización.
-  // Se usa una variable local `prevSeasonId` para distinguir ambos casos.
+  // ÚNICO $effect — distingue reinicialización (nueva temporada) de actualización (controles)
+  // Svelte 5 detecta el cambio de hiddenDrivers porque +page.svelte reasigna la referencia del Set
   let prevSeasonYear = $state(null);
 
   $effect(() => {
-    // Leer todas las deps reactivas explícitamente
+    // Declarar todas las dependencias reactivas explícitamente
     const season = seasonData;
-    const race = currentRace;
-    const hidden = hiddenDrivers;       // Array: Svelte detecta referencia nueva
-    const battle = battleMode;
-    const battleList = battleDrivers;
-    const highlighted = highlightedDriver;
+    const _race = currentRace;
+    const _hidden = hiddenDrivers;        // nueva referencia de Set → Svelte trackea
+    const _battle = battleMode;
+    const _battleList = battleDrivers;
+    const _highlighted = highlightedDriver;
 
     if (!season) return;
 
@@ -234,10 +218,10 @@
       prevSeasonYear = season.year;
       initChart();
     } else if (chart) {
-      // Misma temporada, solo actualizar datos y estilos
+      // Misma temporada → solo actualizar datos y estilos
       updateChart();
     } else {
-      // Chart aún no inicializado (raro, pero seguro)
+      // Chart aún no inicializado (primera carga aún pendiente del onMount)
       initChart();
     }
   });
