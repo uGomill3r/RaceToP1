@@ -989,12 +989,19 @@
             titleFont: { family: "'Barlow Condensed', sans-serif", size: 11, weight: '600' },
             bodyFont: { family: "'Barlow', sans-serif", size: 12 },
             padding: 10,
+            itemSort: (a, b) => (b.raw ?? 0) - (a.raw ?? 0),
+            filter: item => (item.raw ?? 0) > 0,
             callbacks: {
               title: items => items[0]?.label ?? '',
               label: item => {
                 const id = item.dataset.label;
                 const d = seasonData.drivers[id];
                 return ` ${d?.code ?? id}  ${item.raw ?? 0} pts`;
+              },
+              labelColor: item => {
+                const id = item.dataset.label;
+                const color = seasonData.drivers[id]?.color ?? '#888';
+                return { borderColor: color, backgroundColor: color };
               },
             },
           },
