@@ -262,6 +262,20 @@ def update_seasons_file(years):
 
 
 def main():
+    if "--rebuild-index" in sys.argv:
+        # Solo regenera seasons.json escaneando los JSON existentes
+        existing = sorted(
+            [int(p.stem) for p in OUT_DIR.glob("*.json") if p.stem.isdigit()],
+            reverse=True
+        )
+        if not existing:
+            print("⚠  No se encontraron archivos JSON en", OUT_DIR)
+            return
+        seasons_path = OUT_DIR / "seasons.json"
+        seasons_path.write_text(json.dumps(existing))
+        print(f"✅ seasons.json reconstruido: {existing}")
+        return
+
     years = [int(y) for y in sys.argv[1:]] if len(sys.argv) > 1 else [2025]
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
