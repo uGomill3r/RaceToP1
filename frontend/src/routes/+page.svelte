@@ -6,7 +6,6 @@
   import Header from '$lib/Header.svelte';
   import LeaderBoard from '$lib/LeaderBoard.svelte';
 
-  // Available seasons (add more as you generate JSON files)
   // Temporadas disponibles — se cargan desde /data/seasons.json
   let SEASONS = $state([]);
 
@@ -15,18 +14,22 @@
   let loading = $state(false);
   let error = $state(null);
 
-  // Timeline state
-  let currentRace = $state(0);       // 0 = show all races
+  // Estado de la línea de tiempo
+  let currentRace = $state(0);       // 0 = inicio, sin carrera seleccionada
   let isPlaying = $state(false);
   let playInterval = $state(null);
-  let animationSpeed = $state(800);  // ms per race
+  let animationSpeed = $state(800);  // ms por carrera
 
-  // Driver visibility / battle mode
-  let hiddenDrivers = $state(new Set());
+  // Visibilidad de pilotos — se guarda como Set internamente
+  // pero se expone como Array reactivo para que Svelte detecte cambios
+  let _hiddenDriversSet = $state(new Set());
+  let hiddenDrivers = $derived(Array.from(_hiddenDriversSet));
+
+  // Modo batalla
   let battleMode = $state(false);
   let battleDrivers = $state([]);
 
-  // Highlighted driver (hover)
+  // Piloto resaltado por hover
   let highlightedDriver = $state(null);
 
   async function loadSeason(year) {
@@ -34,7 +37,7 @@
     error = null;
     stopPlayback();
     currentRace = 0;
-    hiddenDrivers = new Set();
+    _hiddenDriversSet = new Set();
     battleMode = false;
     battleDrivers = [];
 
@@ -42,7 +45,7 @@
       const res = await fetch(`/data/${year}.json`);
       if (!res.ok) throw new Error(`Season ${year} data not found. Run the data generator first.`);
       seasonData = await res.json();
-      currentRace = seasonData.totalRaces; // show full season by default
+      currentRace = seasonData.totalRaces; // mostrar temporada completa por defecto
     } catch (e) {
       error = e.message;
       seasonData = null;
@@ -81,7 +84,7 @@
 
   function toggleDriver(driverId) {
     if (battleMode) {
-      // In battle mode, toggle selection of battle drivers
+      // En modo batalla: alternar selección de pilotos enfrentados
       const idx = battleDrivers.indexOf(driverId);
       if (idx >= 0) {
         battleDrivers = battleDrivers.filter(d => d !== driverId);
@@ -89,10 +92,11 @@
         battleDrivers = [...battleDrivers, driverId];
       }
     } else {
-      const next = new Set(hiddenDrivers);
+      // Crear nuevo Set para forzar reactividad vía la asignación
+      const next = new Set(_hiddenDriversSet);
       if (next.has(driverId)) next.delete(driverId);
       else next.add(driverId);
-      hiddenDrivers = next;
+      _hiddenDriversSet = next;
     }
   }
 
@@ -102,10 +106,10 @@
   }
 
   function showAll() {
-    hiddenDrivers = new Set();
+    _hiddenDriversSet = new Set();
   }
 
-  // Current standings at the selected race
+  // Clasificación actual en la carrera seleccionada
   let currentStandings = $derived.by(() => {
     if (!seasonData || currentRace === 0) return [];
     const snap = seasonData.timeline[currentRace - 1];
@@ -168,11 +172,11 @@
   {:else if loading}
     <div class="loading-state">
       <div class="spinner"></div>
-      <p>Loading {selectedYear} season data…</p>
+      <p>Cargando datos de la temporada {selectedYear}…</p>
     </div>
   {:else if seasonData}
     <main class="layout">
-      <!-- Sidebar -->
+      <!-- Barra lateral -->
       <aside class="sidebar">
         <LeaderBoard
           standings={currentStandings}
@@ -196,7 +200,7 @@
         />
       </aside>
 
-      <!-- Chart area -->
+      <!-- Área del gráfico -->
       <section class="chart-area">
         <ChampionshipChart
           {seasonData}
@@ -261,7 +265,7 @@
     min-width: 0;
   }
 
-  /* Loading */
+  /* Estados de carga y error */
   .loading-state, .error-state {
     flex: 1;
     display: flex;

@@ -4,7 +4,7 @@
   let {
     seasonData,
     currentRace,
-    hiddenDrivers,
+    hiddenDrivers,   // recibido como Array desde +page.svelte
     battleMode,
     battleDrivers,
     highlightedDriver,
@@ -21,9 +21,10 @@
   );
 
   // Determine which drivers to show
+  // hiddenDrivers es un Array — se convierte a Set localmente para O(1) lookup
   function isDriverVisible(driverId) {
     if (battleMode) return battleDrivers.includes(driverId);
-    return !hiddenDrivers.has(driverId);
+    return !hiddenDrivers.includes(driverId);
   }
 
   // Build chart datasets
@@ -37,7 +38,7 @@
       const isHighlighted = highlightedDriver === id;
       const isBattleSelected = battleMode && battleDrivers.includes(id);
 
-      // Points series up to currentRace
+      // Puntos acumulados hasta currentRace
       const data = racesSlice.map(snap => snap.standings[id] ?? null);
 
       let opacity = 1;
@@ -93,7 +94,7 @@
     Chart = C;
     Chart.register(...registerables);
 
-    // Destroy previous chart if exists
+    // Destruir instancia previa si existe
     if (chart) { chart.destroy(); chart = null; }
 
     const datasets = buildDatasets();
@@ -212,21 +213,33 @@
     if (chart) chart.destroy();
   });
 
-  // Reactively update chart when data or state changes
+  // ÚNICO $effect — reinicializa solo cuando cambia seasonData (nueva temporada),
+  // actualiza datasets cuando cambian los controles de visualización.
+  // Se usa una variable local `prevSeasonId` para distinguir ambos casos.
+  let prevSeasonYear = $state(null);
+
   $effect(() => {
-    // Track all reactive deps
-    const _ = [currentRace, hiddenDrivers, battleMode, battleDrivers, highlightedDriver, seasonData];
-    if (chart) {
+    // Leer todas las deps reactivas explícitamente
+    const season = seasonData;
+    const race = currentRace;
+    const hidden = hiddenDrivers;       // Array: Svelte detecta referencia nueva
+    const battle = battleMode;
+    const battleList = battleDrivers;
+    const highlighted = highlightedDriver;
+
+    if (!season) return;
+
+    if (season.year !== prevSeasonYear) {
+      // Nueva temporada → reinicializar el chart completo
+      prevSeasonYear = season.year;
+      initChart();
+    } else if (chart) {
+      // Misma temporada, solo actualizar datos y estilos
       updateChart();
     } else {
+      // Chart aún no inicializado (raro, pero seguro)
       initChart();
     }
-  });
-
-  // Reinitialize when season changes
-  $effect(() => {
-    const _season = seasonData;
-    initChart();
   });
 </script>
 
