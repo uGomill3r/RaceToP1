@@ -1114,6 +1114,7 @@
       const isBattleUnselected = battleMode && !isBattleActive && battleDrivers.length === 2;
 
       const li = document.createElement('li');
+      li.dataset.driverId = driver.id;
       li.className = [
         'driver-item',
         isHidden && !battleMode ? 'd-hidden' : '',
@@ -1140,14 +1141,19 @@
       `;
 
       li.querySelector('.driver-btn').addEventListener('click', () => toggleDriver(driver.id));
-      li.addEventListener('mouseenter', () => { highlightedDriver = driver.id; updateChart(); renderDriverList(); });
-      li.addEventListener('mouseleave', () => { highlightedDriver = null; updateChart(); renderDriverList(); });
+      li.addEventListener('mouseenter', () => { highlightedDriver = driver.id; updateChart(); updateDriverHighlight(); });
+      li.addEventListener('mouseleave', () => { highlightedDriver = null; updateChart(); updateDriverHighlight(); });
 
       elDriversUl.appendChild(li);
     });
   }
 
-  function toggleDriver(id) {
+  function updateDriverHighlight() {
+    elDriversUl.querySelectorAll('.driver-item').forEach(li => {
+      const id = li.dataset.driverId;
+      li.classList.toggle('highlighted', highlightedDriver === id);
+    });
+  }
     if (battleMode) {
       const idx = battleDrivers.indexOf(id);
       if (idx >= 0) {
