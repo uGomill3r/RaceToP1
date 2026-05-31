@@ -1028,12 +1028,30 @@
           const id = elements[0]?.element?.$context?.dataset?.label ?? null;
           if (id !== highlightedDriver) {
             highlightedDriver = id;
-            updateChart();
-            renderDriverList();
+            applyHighlightToChart();
+            updateDriverHighlight();
           }
         },
       },
     });
+  }
+
+  function applyHighlightToChart() {
+    if (!chart || !seasonData) return;
+    chart.data.datasets.forEach(ds => {
+      const id = ds.label;
+      const driver = seasonData.drivers[id];
+      if (!driver) return;
+      const visible = isDriverVisible(id);
+      let opacity = visible ? 1 : 0;
+      if (visible && highlightedDriver && highlightedDriver !== id) opacity = 0.12;
+      const rgba = a => hexToRgba(driver.color, a);
+      ds.borderColor = rgba(opacity);
+      ds.backgroundColor = rgba(opacity * 0.08);
+      ds.pointBackgroundColor = rgba(opacity);
+      ds.pointBorderColor = rgba(opacity);
+    });
+    chart.update('none');
   }
 
   function updateChart() {
@@ -1156,8 +1174,8 @@
       `;
 
       li.querySelector('.driver-btn').addEventListener('click', () => toggleDriver(driver.id));
-      li.addEventListener('mouseenter', () => { highlightedDriver = driver.id; updateChart(); updateDriverHighlight(); });
-      li.addEventListener('mouseleave', () => { highlightedDriver = null; updateChart(); updateDriverHighlight(); });
+      li.addEventListener('mouseenter', () => { highlightedDriver = driver.id; applyHighlightToChart(); updateDriverHighlight(); });
+      li.addEventListener('mouseleave', () => { highlightedDriver = null; applyHighlightToChart(); updateDriverHighlight(); });
 
       elDriversUl.appendChild(li);
     });
