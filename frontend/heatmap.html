@@ -104,6 +104,41 @@
     .select-wrapper select:disabled { opacity: 0.5; cursor: not-allowed; }
     .select-arrow { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--accent); font-size: 0.75rem; pointer-events: none; }
 
+    /* ── MODAL MÁS TEMPORADAS ── */
+    .seasons-modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45); z-index: 200;
+      align-items: center; justify-content: center;
+    }
+    .seasons-modal-overlay.open { display: flex; }
+    .seasons-modal {
+      background: var(--bg-surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 24px 28px; width: 320px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    }
+    .seasons-modal h3 {
+      font-family: var(--font-display); font-size: 1rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-primary); margin-bottom: 6px;
+    }
+    .seasons-modal p { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 16px; }
+    .seasons-modal-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .season-chip {
+      font-family: var(--font-display); font-weight: 700; font-size: 0.9rem;
+      padding: 6px 14px; border-radius: 4px; border: 1px solid var(--border);
+      background: var(--bg-card); color: var(--text-primary); cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .season-chip:hover { border-color: var(--accent); background: var(--bg-hover); }
+    .seasons-modal-close {
+      width: 100%; padding: 8px; background: transparent;
+      border: 1px solid var(--border); border-radius: 4px;
+      color: var(--text-secondary); font-family: var(--font-display);
+      font-size: 0.8rem; letter-spacing: 0.1em; cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .seasons-modal-close:hover { border-color: var(--accent); color: var(--text-primary); }
+
     /* ── LOADING ── */
     .loading-state {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -324,6 +359,16 @@
   </nav>
 </header>
 
+<!-- MODAL MÁS TEMPORADAS -->
+<div id="seasons-modal-overlay" class="seasons-modal-overlay" role="dialog" aria-modal="true" aria-label="Seleccionar temporada">
+  <div class="seasons-modal">
+    <h3>Más temporadas</h3>
+    <p>Selecciona una temporada disponible:</p>
+    <div id="seasons-modal-chips" class="seasons-modal-chips"></div>
+    <button class="seasons-modal-close" id="seasons-modal-close">CERRAR</button>
+  </div>
+</div>
+
 <div id="loading-state" class="loading-state">
   <div class="spinner"></div>
   <p>Loading season data…</p>
@@ -393,14 +438,65 @@
       return;
     }
 
-    seasons.forEach(year => {
+    // Mostrar solo las 5 temporadas más recientes en el selector
+    const RECENT_COUNT = 5;
+    const recentSeasons = seasons.slice(0, RECENT_COUNT);
+    const olderSeasons  = seasons.slice(RECENT_COUNT);
+
+    recentSeasons.forEach(year => {
       const opt = document.createElement('option');
       opt.value = year;
       opt.textContent = year;
       elSeasonSelect.appendChild(opt);
     });
 
-    elSeasonSelect.addEventListener('change', () => loadSeason(Number(elSeasonSelect.value)));
+    // Opción "Más temporadas..." solo si hay temporadas adicionales
+    if (olderSeasons.length > 0) {
+      const optMore = document.createElement('option');
+      optMore.value = '__more__';
+      optMore.textContent = 'Más temporadas…';
+      elSeasonSelect.appendChild(optMore);
+    }
+
+    // Rellenar chips del modal con las temporadas antiguas
+    const elChips = document.getElementById('seasons-modal-chips');
+    olderSeasons.forEach(year => {
+      const chip = document.createElement('button');
+      chip.className = 'season-chip';
+      chip.textContent = year;
+      chip.addEventListener('click', () => {
+        closeModal();
+        if (!elSeasonSelect.querySelector(`option[value="${year}"]`)) {
+          const opt = document.createElement('option');
+          opt.value = year;
+          opt.textContent = year;
+          elSeasonSelect.insertBefore(opt, elSeasonSelect.lastElementChild);
+        }
+        elSeasonSelect.value = year;
+        loadSeason(year);
+      });
+      elChips.appendChild(chip);
+    });
+
+    // Lógica del modal
+    const elModalOverlay = document.getElementById('seasons-modal-overlay');
+    const elModalClose   = document.getElementById('seasons-modal-close');
+
+    function openModal()  { elModalOverlay.classList.add('open'); }
+    function closeModal() { elModalOverlay.classList.remove('open'); }
+
+    elModalOverlay.addEventListener('click', e => { if (e.target === elModalOverlay) closeModal(); });
+    elModalClose.addEventListener('click', closeModal);
+
+    elSeasonSelect.addEventListener('change', () => {
+      if (elSeasonSelect.value === '__more__') {
+        elSeasonSelect.value = elSeasonSelect.querySelector('option:not([value="__more__"])').value;
+        openModal();
+        return;
+      }
+      loadSeason(Number(elSeasonSelect.value));
+    });
+
     await loadSeason(seasons[0]);
   }
 
