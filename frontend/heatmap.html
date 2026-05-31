@@ -454,10 +454,13 @@
     // Sort drivers by total points desc
     const sorted = [...driverIds].sort((a, b) => totals[b] - totals[a]);
 
-    // Max points scored in a single race this season (for color scale)
-    const allPerRacePts = Object.values(perRace).flat();
-    const maxPts = Math.max(...allPerRacePts, 1);
-    buildLegend(maxPts);
+    // Max points scored per round (to normalize color within each weekend)
+    const maxPtsPerRound = timeline.map((_, i) =>
+      Math.max(...driverIds.map(id => perRace[id][i] ?? 0), 1)
+    );
+
+    // For the legend, use the global max (sprint weekend)
+    buildLegend(Math.max(...maxPtsPerRound));
 
     // Only include completed races
     const races = timeline;
@@ -483,8 +486,8 @@
       html += '</div></td>';
 
       perRace[id].forEach((pts, i) => {
-        const bg = ptsToColor(pts, maxPts);
-        const fg = textColor(pts, maxPts);
+        const bg = ptsToColor(pts, maxPtsPerRound[i]);
+        const fg = textColor(pts, maxPtsPerRound[i]);
         const display = pts > 0 ? pts : '';
         html += '<td style="background:' + bg + ';color:' + fg + '" '
               + 'data-pts="' + pts + '" '
