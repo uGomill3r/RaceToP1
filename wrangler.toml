@@ -1,3 +1,3 @@
 # Cloudflare Pages configuration
-name = "RaceToP1"
+name = "racetop1"
 pages_build_output_dir = "frontend"
