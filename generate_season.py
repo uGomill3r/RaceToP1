@@ -270,8 +270,7 @@ def main():
         out_path = OUT_DIR / f"{year}.json"
         out_path.write_text(json.dumps(data, ensure_ascii=False, indent=2))
         print(f"\n✅ Guardado: {out_path}")
-
-    update_seasons_file(years)
+        update_seasons_file([year])
 
 
 if __name__ == "__main__":
