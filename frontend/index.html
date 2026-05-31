@@ -1047,7 +1047,8 @@
       if (!driver) return;
       const visible = isDriverVisible(id);
       let opacity = visible ? 1 : 0;
-      if (visible && highlightedDriver && highlightedDriver !== id) opacity = 0.12;
+      const isBattleSelected = battleMode && battleDrivers.includes(id);
+      if (visible && highlightedDriver && highlightedDriver !== id && !isBattleSelected) opacity = 0.12;
       const rgba = a => hexToRgba(driver.color, a);
       ds.borderColor = rgba(opacity);
       ds.backgroundColor = rgba(opacity * 0.08);
