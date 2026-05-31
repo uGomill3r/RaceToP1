@@ -6,7 +6,7 @@ Usage:
     python manage.py generate_season 2021 2022 2023
     python manage.py generate_season --years 2018 2019 2020 2021 2022 2023
 
-Output goes to ../frontend/static/data/{year}.json by default,
+Output goes to ../frontend/data/{year}.json by default,
 or to a custom path via --output-dir.
 """
 
@@ -60,7 +60,7 @@ class Command(BaseCommand):
         self.stdout.write(f"Output directory: {output_dir}\n")
 
         # Late import so Django settings are already configured
-        from app.f1_data import save_season_json
+        from app.f1_data import save_season_json, update_seasons_index
 
         success, failed = [], []
 
@@ -79,6 +79,12 @@ class Command(BaseCommand):
                     self.style.ERROR(f"✗ {year} failed: {exc}")
                 )
                 failed.append(year)
+
+        if success:
+            seasons_path = update_seasons_index(success, output_dir)
+            self.stdout.write(
+                self.style.SUCCESS(f"\n✓ seasons.json actualizado → {seasons_path}")
+            )
 
         self.stdout.write(f"\n{'═' * 40}")
         self.stdout.write(

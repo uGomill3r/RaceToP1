@@ -16,7 +16,7 @@ from pathlib import Path
 # Allow importing from parent package without installing
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.f1_data import save_season_json  # noqa: E402
+from app.f1_data import save_season_json, update_seasons_index  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,
@@ -63,6 +63,9 @@ def main():
 
     print(f"\n{'═' * 48}")
     print(f"Success: {success}")
+    if success:
+        seasons_path = update_seasons_index(success, output_dir)
+        print(f"✓  seasons.json actualizado → {seasons_path}")
     if failed:
         print(f"Failed:  {failed}", file=sys.stderr)
         sys.exit(1)

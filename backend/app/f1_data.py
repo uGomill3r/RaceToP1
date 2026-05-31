@@ -342,3 +342,37 @@ def save_season_json(year: int, output_dir: Path) -> Path:
     out_path.write_text(json.dumps(data, ensure_ascii=False, indent=2))
     logger.info("Archivo escrito: %s (%d bytes)", out_path, out_path.stat().st_size)
     return out_path
+
+
+def update_seasons_index(years: list[int], output_dir: Path) -> Path:
+    """
+    Actualiza seasons.json en output_dir incorporando los años indicados.
+    El resultado es una lista ordenada de más reciente a más antigua,
+    sin duplicados. Crea el archivo si no existe.
+    Retorna el path del archivo actualizado.
+    """
+    seasons_path = output_dir / "seasons.json"
+
+    # Leer lista existente
+    existing: list[int] = []
+    if seasons_path.exists():
+        try:
+            existing = json.loads(seasons_path.read_text(encoding="utf-8"))
+            if not isinstance(existing, list):
+                logger.warning(
+                    "seasons.json no contiene una lista — se sobreescribirá"
+                )
+                existing = []
+        except Exception as exc:
+            logger.error("Error leyendo seasons.json: %s", exc)
+            existing = []
+
+    # Combinar, deduplicar y ordenar de más reciente a más antigua
+    merged = sorted(set(existing) | set(years), reverse=True)
+    seasons_path.write_text(
+        json.dumps(merged, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    logger.info(
+        "seasons.json actualizado: %s → %s", existing, merged
+    )
+    return seasons_path
