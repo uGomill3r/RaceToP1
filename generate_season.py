@@ -44,17 +44,24 @@ TEAM_COLORS = {
 FALLBACK_COLOR = "#888888"
 
 
-def get(url, params=None, retries=3):
+def get(url, params=None, retries=5):
     """GET con reintentos y rate limiting básico."""
     for attempt in range(retries):
         try:
             r = requests.get(url, params=params, timeout=15)
+            if r.status_code == 429:
+                wait = 10 * (attempt + 1)
+                print(f"\n  ⏳ Rate limit (429), esperando {wait}s...", end="", flush=True)
+                time.sleep(wait)
+                continue
             r.raise_for_status()
-            time.sleep(0.3)  # respetar rate limit de Jolpica
+            time.sleep(1.0)  # respetar rate limit de Jolpica
             return r.json()
+        except requests.exceptions.HTTPError:
+            raise
         except Exception as e:
             print(f"  ⚠  Intento {attempt+1}/{retries} falló: {e}")
-            time.sleep(2 ** attempt)
+            time.sleep(5 * (attempt + 1))
     raise RuntimeError(f"No se pudo obtener {url}")
 
 
