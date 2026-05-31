@@ -5,9 +5,10 @@ usando la API de Jolpica (sucesor gratuito de Ergast).
 
 Uso:
     pip install requests
-    python generate_season.py 2021
     python generate_season.py 2025
-    python generate_season.py 2021 2022 2023 2024 2025
+    python generate_season.py 2021 2022 2023
+    python generate_season.py 2021-2025
+    python generate_season.py 2009-2015 2020 2025
 
 Los archivos se guardan en ./frontend/data/<year>.json
 y se actualiza ./frontend/data/seasons.json automáticamente.
@@ -280,7 +281,21 @@ def main():
         print(f"✅ seasons.json reconstruido: {existing}")
         return
 
-    years = [int(y) for y in sys.argv[1:]] if len(sys.argv) > 1 else [2025]
+    # Acepta años sueltos y rangos con guion: 2021 2022 o 2021-2024
+    raw_args = sys.argv[1:] if len(sys.argv) > 1 else ["2025"]
+    years = []
+    for arg in raw_args:
+        if "-" in arg:
+            parts = arg.split("-")
+            if len(parts) == 2 and all(p.isdigit() for p in parts):
+                start, end = int(parts[0]), int(parts[1])
+                years.extend(range(start, end + 1))
+            else:
+                print(f"⚠  Rango inválido: '{arg}'. Formato esperado: 2021-2024")
+                sys.exit(1)
+        else:
+            years.append(int(arg))
+    years = sorted(set(years))  # eliminar duplicados y ordenar
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     for year in years:
