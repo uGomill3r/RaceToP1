@@ -1035,14 +1035,7 @@
             },
           },
         },
-        onHover: (event, elements) => {
-          const id = elements.length > 0 ? elements[0]?.element?.$context?.dataset?.label ?? null : null;
-          if (id !== highlightedDriver) {
-            highlightedDriver = id;
-            applyHighlightToChart();
-            updateDriverHighlight();
-          }
-        },
+  elChartCanvas.addEventListener('mouseleave', () => {
       },
     });
   }
@@ -1331,14 +1324,6 @@
   }
 
   // ── EVENT LISTENERS ────────────────────────────────────────────────────
-  elChartCanvas.addEventListener('mouseleave', () => {
-    if (highlightedDriver !== null) {
-      highlightedDriver = null;
-      applyHighlightToChart();
-      updateDriverHighlight();
-    }
-  });
-
   elBtnPlay.addEventListener('click', togglePlayback);
   elBtnRewind.addEventListener('click', () => { stopPlayback(); seek(0); });
   elBtnEnd.addEventListener('click', () => { stopPlayback(); seek(seasonData?.totalRaces ?? 0); });
