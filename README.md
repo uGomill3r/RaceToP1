@@ -1,9 +1,9 @@
-# 🏎 F1 Championship Visualizer
+# 🏎 RaceToP1 — F1 Championship Visualizer
 
-> A fast, beautiful, fully-static web app that animates how F1 drivers battle for the championship race by race — inspired by RaceLytic, styled like F1 TV.
+> Sitio web estático que anima cómo los pilotos de F1 luchan por el campeonato carrera a carrera, inspirado en RaceLytic y con estética de F1 TV.
 
-![Tech Stack](https://img.shields.io/badge/Frontend-SvelteKit-orange?style=flat-square)
-![Tech Stack](https://img.shields.io/badge/Backend-Python%20%2F%20Django-blue?style=flat-square)
+![Frontend](https://img.shields.io/badge/Frontend-HTML%20%2F%20JS%20%2F%20Chart.js-orange?style=flat-square)
+![Backend](https://img.shields.io/badge/Data-Python%20standalone-blue?style=flat-square)
 ![Deploy](https://img.shields.io/badge/Deploy-Cloudflare%20Pages-orange?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
@@ -13,213 +13,155 @@
 
 | Feature | Description |
 |---|---|
-| 📈 **Animated timeline** | Watch championship points evolve race by race |
-| ▶ **Playback controls** | Play / Pause / Scrub / Speed (0.5×–4×) |
-| 👁 **Driver filters** | Show/hide any driver with one click |
-| ⚔ **Battle mode** | Isolate 2 drivers for a head-to-head comparison |
-| 🏆 **Live leaderboard** | Current standings + gap to leader, updated per race |
-| 🔆 **Driver highlight** | Hover a driver to spotlight their line |
-| 📅 **Season switcher** | Instantly load a different season |
-| ⚡ **100% static** | No server needed in production — deploy anywhere |
+| 📈 **Animated timeline** | Puntos del campeonato evolucionando carrera a carrera |
+| ▶ **Playback controls** | Play / Pause / Scrub / Velocidad (0.5×–4×) |
+| 👁 **Driver filters** | Mostrar/ocultar cualquier piloto con un clic |
+| ⚔ **Battle mode** | Aislar 2 pilotos para comparación cabeza a cabeza |
+| 🏆 **Live leaderboard** | Clasificación actual + diferencia con el líder por carrera |
+| 🔆 **Driver highlight** | Hover sobre un piloto para resaltar su línea |
+| 📅 **Season switcher** | Cargar cualquier temporada al instante |
+| 🗺 **Heatmap view** | Vista alternativa de resultados por carrera en cuadrícula |
+| ⚡ **100% estático** | Sin servidor en producción — desplegable en cualquier CDN |
 
 ---
 
-## 🏗 Architecture
+## 🏗 Arquitectura
 
 ```
-project/
-├── backend/                    ← Python-only, used locally to generate data
-│   ├── manage.py               ← Django CLI entry point
-│   ├── app/
-│   │   ├── settings.py         ← Minimal Django config (no DB)
-│   │   ├── f1_data.py          ← Core fetch + processing logic
-│   │   └── management/
-│   │       └── commands/
-│   │           └── generate_season.py   ← Django management command
-│   ├── scripts/
-│   │   └── generate_season.py  ← Standalone script (no Django needed)
-│   └── requirements.txt
+RaceToP1/
+├── frontend/
+│   ├── index.html          ← App principal (Championship Visualizer)
+│   ├── heatmap.html        ← Vista heatmap de resultados
+│   └── data/               ← Archivos JSON generados (uno por temporada)
+│       ├── seasons.json    ← Lista de temporadas disponibles
+│       ├── 2009.json
+│       ├── ...
+│       └── 2025.json
 │
-├── frontend/                   ← SvelteKit static site
-│   ├── src/
-│   │   ├── app.html            ← HTML shell
-│   │   ├── routes/
-│   │   │   ├── +layout.svelte  ← Global styles & layout
-│   │   │   ├── +layout.js      ← SSR=false, prerender=true
-│   │   │   └── +page.svelte    ← Main app page
-│   │   └── lib/
-│   │       ├── ChampionshipChart.svelte  ← Chart.js line chart
-│   │       ├── TimelineControls.svelte  ← Playback + scrubber
-│   │       ├── DriverList.svelte        ← Sidebar driver list
-│   │       ├── LeaderBoard.svelte       ← Current standings panel
-│   │       └── Header.svelte            ← Top bar + season selector
-│   ├── static/
-│   │   └── data/               ← Generated JSON files go here
-│   │       ├── 2021.json
-│   │       ├── 2022.json
-│   │       └── 2023.json
-│   ├── svelte.config.js        ← adapter-static config
-│   ├── vite.config.js
-│   └── package.json
-│
-├── .github/
-│   └── workflows/
-│       └── deploy.yml          ← GitHub Actions → Cloudflare Pages
-├── wrangler.toml               ← Cloudflare Pages build config
-└── README.md
+├── generate_season.py      ← Script Python standalone para generar datos
+├── docker-compose.yml      ← nginx local para desarrollo
+├── nginx.conf              ← Configuración de nginx
+├── Makefile                ← Comandos de desarrollo
+├── wrangler.toml           ← Configuración de Cloudflare Pages
+└── .github/
+    └── workflows/
+        └── deploy.yml      ← GitHub Actions → Cloudflare Pages
 ```
 
-**Data flow:**
+**Flujo de datos:**
 
 ```
-Jolpica F1 API  →  Python script  →  {year}.json  →  SvelteKit (static)  →  Cloudflare Pages
-    (remote)         (local only)     (committed)        (build)               (production)
+Jolpica F1 API  →  generate_season.py  →  {year}.json  →  index.html / heatmap.html
+   (remota)          (solo local/CI)       (committed)        (vanilla JS + Chart.js)
 ```
 
-Django is **never needed in production**. It's a developer-ergonomics wrapper around a pure Python script.
+No hay framework de frontend ni paso de build — el sitio se sirve directamente desde `frontend/`.
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Desarrollo local
 
-### 1. Clone the repo
+### 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/your-org/f1-championship-visualizer.git
-cd f1-championship-visualizer
+git clone https://github.com/tu-usuario/RaceToP1.git
+cd RaceToP1
 ```
 
-### 2. Generate season data (backend)
+### 2. Generar datos de temporada
 
-**Option A — Standalone script** (no Django setup needed):
+Solo necesita `requests`:
 
 ```bash
-cd backend
-pip install requests       # only dependency for the script
-python scripts/generate_season.py 2023
-# generates: frontend/static/data/2023.json
+pip install requests
 
-# Multiple seasons at once:
-python scripts/generate_season.py 2021 2022 2023
+# Una temporada
+python generate_season.py 2025
+
+# Varias temporadas
+python generate_season.py 2021 2022 2023 2024 2025
 ```
 
-**Option B — Django management command**:
+Los archivos se guardan en `frontend/data/` y `seasons.json` se actualiza automáticamente.
+
+> **Fuente de datos:** [Jolpica F1 API](https://github.com/jolpica/jolpica-f1) (sucesor gratuito de Ergast). Una temporada completa (~22 carreras) se procesa en segundos.
+
+### 3. Servir el sitio localmente
+
+**Opción A — Docker (recomendado):**
 
 ```bash
-cd backend
-pip install -r requirements.txt
-
-# Single season
-DJANGO_SETTINGS_MODULE=app.settings python manage.py generate_season 2023
-
-# Multiple seasons
-DJANGO_SETTINGS_MODULE=app.settings python manage.py generate_season 2021 2022 2023
-
-# Custom output directory
-DJANGO_SETTINGS_MODULE=app.settings python manage.py generate_season 2023 \
-  --output-dir /path/to/frontend/static/data
-```
-
-> **Note:** The scripts pull live data from the [Jolpica F1 API](https://github.com/jolpica/jolpica-f1)
-> (the maintained Ergast mirror). A full season (~22 races) fetches in seconds.
-
-### 3. Run the frontend (development)
-
-```bash
-cd frontend
-npm install --legacy-peer-deps
-npm run dev
+make dev
 # → http://localhost:5173
 ```
 
-### 4. Build for production
+**Opción B — Python simple:**
 
 ```bash
 cd frontend
-npm run build
-# → frontend/build/   (ready to deploy)
-```
-
-### 5. Preview the production build locally
-
-```bash
-cd frontend
-npm run preview
-# → http://localhost:4173
+python -m http.server 5173
+# → http://localhost:5173
 ```
 
 ---
 
-## 🌐 Deployment — Cloudflare Pages
+## 🌐 Deploy — Cloudflare Pages
 
-### Option A: Manual via Cloudflare Dashboard
+### Opción A: Dashboard de Cloudflare (sin build step)
 
-1. Push your repo to GitHub (make sure `frontend/static/data/*.json` files are committed).
-2. Go to [Cloudflare Pages](https://pages.cloudflare.com) → **Create a project** → Connect to Git.
-3. Set:
-   - **Framework preset:** SvelteKit
-   - **Build command:** `cd frontend && npm install --legacy-peer-deps && npm run build`
-   - **Build output directory:** `frontend/build`
-   - **Node.js version:** 20
-4. Deploy. Done. ✅
+Como el frontend es HTML estático puro, **no se necesita ningún build command**:
 
-### Option B: GitHub Actions (automated)
+1. Push del repo a GitHub (asegurarse de que `frontend/data/*.json` estén commiteados).
+2. Ir a [Cloudflare Pages](https://pages.cloudflare.com) → **Create a project** → Connect to Git.
+3. Configurar:
+   - **Framework preset:** None
+   - **Build command:** *(dejar vacío)*
+   - **Build output directory:** `frontend`
+4. Deploy. ✅
 
-Add these secrets to your GitHub repo (`Settings → Secrets → Actions`):
+### Opción B: GitHub Actions (automatizado)
 
-| Secret | Where to get it |
+Agregar estos secrets en el repo de GitHub (`Settings → Secrets → Actions`):
+
+| Secret | Dónde obtenerlo |
 |---|---|
 | `CLOUDFLARE_API_TOKEN` | Cloudflare Dashboard → My Profile → API Tokens → Edit Cloudflare Pages |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Dashboard → right sidebar |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Dashboard → barra lateral derecha |
 
-Every push to `main` will:
-1. Generate fresh season data from the API
-2. Build the SvelteKit site
-3. Deploy to Cloudflare Pages automatically
+Cada push a `main`:
+1. Genera datos frescos desde la API de Jolpica
+2. Despliega directamente en Cloudflare Pages
 
-See `.github/workflows/deploy.yml` for full configuration.
-
-### Option C: Netlify / Vercel / GitHub Pages
-
-The output in `frontend/build/` is a standard static site — it works anywhere:
-
-```bash
-# Netlify CLI
-netlify deploy --dir=frontend/build --prod
-
-# Vercel
-vercel frontend/build --prod
-
-# GitHub Pages (via gh-pages)
-npx gh-pages -d frontend/build
-```
+Ver `.github/workflows/deploy.yml` para la configuración completa.
 
 ---
 
-## ➕ Adding a New Season
+## ➕ Agregar una nueva temporada
 
-1. Generate the data:
+1. Generar los datos:
    ```bash
-   python backend/scripts/generate_season.py 2024
+   python generate_season.py 2026
    ```
 
-2. Add the year to the `SEASONS` array in `frontend/src/routes/+page.svelte`:
-   ```js
-   const SEASONS = [2024, 2023, 2022, 2021, 2020, 2019, 2018];
+2. Commitear el archivo generado:
+   ```bash
+   git add frontend/data/2026.json frontend/data/seasons.json
+   git commit -m "feat: add 2026 season data"
+   git push
    ```
 
-3. Rebuild and redeploy.
+El sitio leerá `seasons.json` automáticamente y mostrará la nueva temporada en el selector.
 
 ---
 
-## 📦 JSON Data Format
+## 📦 Formato JSON de datos
 
-Each `{year}.json` has this shape:
+Cada `{year}.json` tiene esta estructura:
 
 ```json
 {
-  "year": 2023,
-  "totalRaces": 22,
+  "year": 2025,
+  "totalRaces": 24,
   "drivers": {
     "VER": {
       "name": "Max Verstappen",
@@ -233,11 +175,10 @@ Each `{year}.json` has this shape:
       "race": 1,
       "name": "Bahrain Grand Prix",
       "circuit": "Bahrain International Circuit",
-      "date": "2023-03-05",
+      "date": "2025-03-02",
       "standings": {
         "VER": 25,
-        "SAI": 18,
-        "PER": 15
+        "LEC": 18
       },
       "leader": "VER"
     }
@@ -245,58 +186,51 @@ Each `{year}.json` has this shape:
 }
 ```
 
-`standings` values are **cumulative** points up to and including that race.
+`standings` contiene puntos **acumulados** hasta esa carrera inclusive.
 
 ---
 
 ## 🎨 Design System
 
-| Token | Value | Usage |
+| Token | Valor | Uso |
 |---|---|---|
-| `--bg-deep` | `#080a0f` | Page background |
-| `--bg-surface` | `#0d1117` | Header, sidebar |
-| `--bg-card` | `#111827` | Chart card, controls |
-| `--accent` | `#e10600` | F1 red — buttons, leader highlight |
-| `--font-display` | Barlow Condensed | Headers, codes, labels |
-| `--font-body` | Barlow | Body text |
+| `--bg-deep` | `#f0f2f5` | Fondo de página |
+| `--bg-surface` | `#ffffff` | Header, sidebar |
+| `--bg-card` | `#f8f9fb` | Tarjeta del gráfico, controles |
+| `--accent` | `#e10600` | Rojo F1 — botones, líder |
+| `--font-display` | Barlow Condensed | Headers, códigos, etiquetas |
+| `--font-body` | Barlow | Texto general |
 
 ---
 
-## 🛠 Tech Stack
+## 🛠 Stack técnico
 
-| Layer | Technology | Why |
+| Capa | Tecnología | Por qué |
 |---|---|---|
-| Frontend | SvelteKit + adapter-static | Zero-JS SSR, tiny bundles |
-| Charts | Chart.js 4 | Mature, performant, easy animation |
-| Backend | Python + Django (optional) | Clean CLI for data generation |
-| Data source | Jolpica F1 API (Ergast-compatible) | Free, reliable, full history |
-| Hosting | Cloudflare Pages | Global CDN, free tier, fast |
+| Frontend | HTML + JS vanilla + Chart.js 4 | Sin build step, cero dependencias en producción |
+| Datos | Python standalone (`requests`) | Script simple, sin framework necesario |
+| Fuente de datos | Jolpica F1 API (compatible con Ergast) | Gratuita, completa, mantenida |
+| Hosting | Cloudflare Pages | CDN global, tier gratuito, deploy directo de carpeta estática |
 
 ---
 
 ## 🔧 Troubleshooting
 
-**`403 Forbidden` from Jolpica API**
-The API has rate limits. Wait a minute and retry. For CI environments, consider committing the JSON files so the API is only called when you explicitly want fresh data.
+**`403 Forbidden` de la API de Jolpica**
+La API tiene rate limits. Esperar un minuto y reintentar. Para CI, considerar commitear los JSON y regenerarlos solo cuando sea necesario.
 
-**Season data not found in the UI**
-Make sure the JSON file is in `frontend/static/data/{year}.json` before building. The file must be present at build time to be served.
+**Los datos de una temporada no aparecen en el UI**
+Verificar que el archivo `frontend/data/{year}.json` esté commiteado y que `seasons.json` incluya ese año.
 
-**`npm install` peer dependency errors**
-Run with `--legacy-peer-deps`. This is a known compatibility issue between Svelte 5 and some packages:
-```bash
-npm install --legacy-peer-deps
-```
-
-**Chart not rendering / blank area**
-Open DevTools (F12). Most likely the JSON file isn't being served at `/data/{year}.json` — check the Network tab.
+**El gráfico no renderiza / área en blanco**
+Abrir DevTools (F12). Lo más probable es que el JSON no se sirva en `/data/{year}.json` — revisar la pestaña Network.
 
 ---
 
 ## 📄 License
 
-MIT — do whatever you want with it. Attribution appreciated but not required.
+MIT — úsalo como quieras. Atribución apreciada pero no requerida.
 
 ---
 
-*Built with ♥ for the fastest sport on earth.*
+*Hecho con ♥ para el deporte más rápido del planeta.*

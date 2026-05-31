@@ -2,8 +2,8 @@
 # Docs: https://developers.cloudflare.com/pages/
 
 [build]
-  command = "cd frontend && npm install --legacy-peer-deps && npm run build"
-  publish = "frontend/build"
+  command = ""
+  publish = "frontend"
 
 [build.environment]
   NODE_VERSION = "20"

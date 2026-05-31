@@ -25,7 +25,7 @@ jobs:
       # or generated fresh on each deploy.
       - name: Generate season data
         run: |
-          python backend/scripts/generate_season.py 2021 2022 2023
+          run: python generate_season.py 2021 2022 2023 2024 2025
         # Uncomment to fail the build if data generation fails:
         # continue-on-error: false
 
@@ -50,5 +50,5 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: f1-championship-visualizer
-          directory: frontend/build
+          directory: frontend
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
