@@ -1,47 +1,59 @@
 """
 f1_data.py — Obtención y procesamiento de datos de temporadas F1.
 
-Fuente: OpenF1 API (https://api.openf1.org/v1/)
-Cobertura: temporadas 2023 en adelante.
+Fuente: FastF1 (https://docs.fastf1.dev/)
+  - Temporadas 2018+  : fastf1.get_session() → session.results
+                        (usa la API oficial de F1 vía fastf1)
+  - Temporadas <2018  : fastf1.ergast.Ergast() → Jolpica/Ergast API
+                        (cobertura histórica desde 1950)
 
-Endpoints utilizados:
-  - /sessions        → sesiones de carrera por año
-  - /session_result  → resultados finales de cada carrera (posición + puntos)
-  - /drivers         → metadata de pilotos (nombre, equipo, color)
-
-Clave interna: driver_number (entero) — evita duplicados por inconsistencia
-de name_acronym entre sesiones.
+Nota: FastF1 guarda en caché los datos en disco. Se configura
+la ruta de caché con FASTF1_CACHE_DIR (por defecto ./cache/fastf1).
 """
 
 import json
 import logging
+import os
 import time
 from pathlib import Path
 
-import requests
+import fastf1
+import fastf1.ergast
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-OPENF1_BASE = "https://api.openf1.org/v1"
+# ---------------------------------------------------------------------------
+# Configuración de caché FastF1
+# ---------------------------------------------------------------------------
 
-# Colores de respaldo por nombre de equipo
+_CACHE_DIR = Path(os.environ.get("FASTF1_CACHE_DIR", "./cache/fastf1"))
+_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+fastf1.Cache.enable_cache(str(_CACHE_DIR))
+logger.info("FastF1 caché habilitado en: %s", _CACHE_DIR)
+
+# Año mínimo con soporte completo de la API oficial de F1 en FastF1
+_F1_API_MIN_YEAR = 2018
+
+# Colores de respaldo por nombre de equipo (minúsculas, coincidencia parcial)
 TEAM_COLORS_FALLBACK = {
-    "red bull racing":   "#3671C6",
-    "mercedes":          "#27F4D2",
-    "ferrari":           "#E8002D",
-    "mclaren":           "#FF8000",
-    "alpine":            "#FF87BC",
-    "alpine f1 team":    "#FF87BC",
-    "aston martin":      "#229971",
-    "williams":          "#64C4FF",
-    "rb":                "#6692FF",
-    "rb f1 team":        "#6692FF",
-    "kick sauber":       "#52E252",
-    "haas":              "#B6BABD",
-    "haas f1 team":      "#B6BABD",
-    "alphatauri":        "#5E8FAA",
-    "alfa romeo":        "#900000",
-    "racing point":      "#F596C8",
+    "red bull":      "#3671C6",
+    "mercedes":      "#27F4D2",
+    "ferrari":       "#E8002D",
+    "mclaren":       "#FF8000",
+    "alpine":        "#FF87BC",
+    "aston martin":  "#229971",
+    "williams":      "#64C4FF",
+    "rb":            "#6692FF",
+    "toro rosso":    "#469BFF",
+    "alphatauri":    "#5E8FAA",
+    "sauber":        "#52E252",
+    "alfa romeo":    "#900000",
+    "haas":          "#B6BABD",
+    "racing point":  "#F596C8",
+    "force india":   "#F596C8",
+    "renault":       "#FFF500",
+    "lotus":         "#FFB800",
 }
 
 FALLBACK_COLORS = [
@@ -51,90 +63,152 @@ FALLBACK_COLORS = [
 
 
 # ---------------------------------------------------------------------------
-# Utilidades HTTP
+# Helpers de color
 # ---------------------------------------------------------------------------
 
-def _get(url: str, params: dict = None, retries: int = 3, backoff: float = 2.0) -> any:
-    """GET con reintentos y backoff exponencial. Pausa extra en 429."""
-    for attempt in range(retries):
-        try:
-            resp = requests.get(url, params=params, timeout=20)
-            if resp.status_code == 429:
-                wait = backoff ** (attempt + 2)
-                logger.warning("Rate limit (429), esperando %.1fs…", wait)
-                time.sleep(wait)
-                continue
-            resp.raise_for_status()
-            return resp.json()
-        except requests.RequestException as exc:
-            if attempt == retries - 1:
-                logger.error("Request fallida definitivamente: %s — %s", url, exc)
-                raise
-            wait = backoff ** attempt
-            logger.warning("Request fallida (%s), reintentando en %.1fs…", exc, wait)
-            time.sleep(wait)
-
-
-# ---------------------------------------------------------------------------
-# Fetchers
-# ---------------------------------------------------------------------------
-
-def _fetch_sessions(year: int) -> list[dict]:
-    """Obtiene sesiones de carrera del año, ordenadas por fecha."""
-    logger.info("Obteniendo sesiones de carrera para %d…", year)
-    data = _get(f"{OPENF1_BASE}/sessions", params={"year": year, "session_type": "Race"})
-    sessions = sorted(data or [], key=lambda s: s.get("date_start", ""))
-    logger.info("  → %d carreras encontradas", len(sessions))
-    return sessions
-
-
-def _fetch_session_result(session_key: int) -> list[dict]:
-    """Resultados finales de una carrera. Retorna lista vacía si no hay datos."""
-    data = _get(f"{OPENF1_BASE}/session_result", params={"session_key": session_key})
-    return data or []
-
-
-def _fetch_drivers(session_key: int) -> dict[int, dict]:
-    """
-    Metadata de pilotos para una sesión.
-    Retorna dict driver_number (int) → datos del piloto.
-    Solo incluye entradas con name_acronym válido.
-    """
-    data = _get(f"{OPENF1_BASE}/drivers", params={"session_key": session_key})
-    result = {}
-    for d in (data or []):
-        num = d.get("driver_number")
-        acronym = d.get("name_acronym", "").strip()
-        # Solo registrar si tiene acronym válido (evita entradas vacías)
-        if num and acronym:
-            result[num] = d
-    return result
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _resolve_color(team_name: str, team_colour_hex: str | None, color_index: int) -> str:
-    """Color con prioridad: OpenF1 hex → fallback por nombre → fallback genérico."""
-    if team_colour_hex:
-        return f"#{team_colour_hex}" if not team_colour_hex.startswith("#") else team_colour_hex
+def _resolve_color(team_name: str, hex_color: str | None, color_index: int) -> str:
+    """Color con prioridad: FastF1 hex → fallback por nombre → fallback genérico."""
+    if hex_color:
+        return hex_color if hex_color.startswith("#") else f"#{hex_color}"
     name_key = (team_name or "").lower().strip()
     for key, color in TEAM_COLORS_FALLBACK.items():
-        if key in name_key or name_key in key:
+        if key in name_key:
             return color
     return FALLBACK_COLORS[color_index % len(FALLBACK_COLORS)]
 
 
-def _driver_id_from_number(num: int, known_drivers: dict[int, dict]) -> str:
+# ---------------------------------------------------------------------------
+# Fuente A: FastF1 API (2018+)
+# ---------------------------------------------------------------------------
+
+def _load_race_results_f1api(year: int, round_number: int) -> pd.DataFrame | None:
     """
-    Genera un driver_id consistente a partir del driver_number.
-    Si hay metadata disponible usa el acronym en minúsculas,
-    de lo contrario usa el número como fallback temporal.
+    Carga resultados de una carrera usando la API oficial de F1 vía FastF1.
+    Retorna DataFrame con columnas estándar o None si no hay datos.
     """
-    info = known_drivers.get(num, {})
-    acronym = (info.get("name_acronym") or "").strip()
-    return acronym.lower() if acronym else f"_num{num}"
+    try:
+        session = fastf1.get_session(year, round_number, "R")
+        session.load(laps=False, telemetry=False, weather=False, messages=False)
+        results = session.results
+        if results is None or results.empty:
+            logger.warning(
+                "  Sin resultados en F1 API para ronda %d/%d", round_number, year
+            )
+            return None
+        logger.debug(
+            "  F1 API: %d pilotos cargados para ronda %d", len(results), round_number
+        )
+        return results
+    except Exception as exc:
+        logger.error(
+            "  Error cargando ronda %d/%d vía F1 API: %s", round_number, year, exc
+        )
+        return None
+
+
+def _parse_results_f1api(df: pd.DataFrame, team_color_map: dict, color_index: int) -> tuple[dict, dict, int]:
+    """
+    Parsea un DataFrame de session.results y retorna:
+      - race_points: {driver_id → puntos}
+      - driver_meta_updates: {driver_id → metadata} (solo pilotos nuevos)
+      - color_index actualizado
+    """
+    race_points: dict[str, float] = {}
+    driver_meta_updates: dict[str, dict] = {}
+
+    for _, row in df.iterrows():
+        acronym    = str(row.get("Abbreviation") or "").strip()
+        driver_id  = acronym.lower() if acronym else f"drv{row.get('DriverNumber', 'x')}"
+        full_name  = str(row.get("FullName") or f"Driver {row.get('DriverNumber', '?')}").strip()
+        team_name  = str(row.get("TeamName") or "Unknown").strip()
+        team_color = str(row.get("TeamColor") or "").strip() or None
+        points     = float(row.get("Points") or 0)
+
+        race_points[driver_id] = points
+
+        team_key = team_name.lower()
+        if team_key not in team_color_map:
+            team_color_map[team_key] = _resolve_color(team_name, team_color, color_index)
+            color_index += 1
+
+        if driver_id not in driver_meta_updates:
+            driver_meta_updates[driver_id] = {
+                "name":  full_name,
+                "color": team_color_map[team_key],
+                "team":  team_name,
+                "code":  acronym or str(row.get("DriverNumber", "?")),
+            }
+
+    return race_points, driver_meta_updates, color_index
+
+
+# ---------------------------------------------------------------------------
+# Fuente B: Ergast/Jolpica (historial pre-2018 y fallback)
+# ---------------------------------------------------------------------------
+
+def _load_race_results_ergast(year: int, round_number: int) -> pd.DataFrame | None:
+    """
+    Carga resultados vía fastf1.ergast (Jolpica API).
+    Retorna DataFrame con campos del Ergast o None si falla.
+    """
+    try:
+        ergast = fastf1.ergast.Ergast()
+        response = ergast.get_race_results(season=year, round=round_number, limit=30)
+        if not response.content:
+            logger.warning(
+                "  Ergast: sin contenido para ronda %d/%d", round_number, year
+            )
+            return None
+        df = response.content[0]
+        if df.empty:
+            logger.warning(
+                "  Ergast: DataFrame vacío para ronda %d/%d", round_number, year
+            )
+            return None
+        logger.debug(
+            "  Ergast: %d pilotos cargados para ronda %d", len(df), round_number
+        )
+        return df
+    except Exception as exc:
+        logger.error(
+            "  Error cargando ronda %d/%d vía Ergast: %s", round_number, year, exc
+        )
+        return None
+
+
+def _parse_results_ergast(df: pd.DataFrame, team_color_map: dict, color_index: int) -> tuple[dict, dict, int]:
+    """
+    Parsea un DataFrame de Ergast y retorna el mismo formato que _parse_results_f1api.
+    Columnas Ergast: driverCode, givenName, familyName, constructorName, points, position.
+    """
+    race_points: dict[str, float] = {}
+    driver_meta_updates: dict[str, dict] = {}
+
+    for _, row in df.iterrows():
+        code      = str(row.get("driverCode") or "").strip()
+        driver_id = code.lower() if code else f"drv{row.get('driverNumber', 'x')}"
+        first     = str(row.get("givenName") or "").strip()
+        last      = str(row.get("familyName") or "").strip()
+        full_name = f"{first} {last}".strip() or f"Driver {row.get('driverNumber', '?')}"
+        team_name = str(row.get("constructorName") or "Unknown").strip()
+        points    = float(row.get("points") or 0)
+
+        race_points[driver_id] = points
+
+        team_key = team_name.lower()
+        if team_key not in team_color_map:
+            team_color_map[team_key] = _resolve_color(team_name, None, color_index)
+            color_index += 1
+
+        if driver_id not in driver_meta_updates:
+            driver_meta_updates[driver_id] = {
+                "name":  full_name,
+                "color": team_color_map[team_key],
+                "team":  team_name,
+                "code":  code or str(row.get("driverNumber", "?")),
+            }
+
+    return race_points, driver_meta_updates, color_index
 
 
 # ---------------------------------------------------------------------------
@@ -143,121 +217,115 @@ def _driver_id_from_number(num: int, known_drivers: dict[int, dict]) -> str:
 
 def build_season_json(year: int) -> dict:
     """
-    Pipeline completo: obtiene datos de OpenF1, calcula standings acumulados
-    y retorna dict listo para serializar a JSON.
+    Pipeline completo: obtiene calendario y resultados de la temporada {year}
+    usando FastF1 y calcula standings acumulados carrera a carrera.
 
-    Estrategia para evitar duplicados:
-      1. Acumular metadata de pilotos a través de TODAS las sesiones antes de procesar.
-      2. Usar driver_number como clave interna durante el procesamiento.
-      3. Convertir a acronym solo al final, cuando ya tenemos metadata completa.
+    Estrategia de fuente de datos:
+      - year >= 2018: F1 API (fastf1.get_session) con fallback a Ergast
+      - year <  2018: Ergast/Jolpica directamente
     """
-    sessions = _fetch_sessions(year)
-    if not sessions:
+    logger.info("Iniciando pipeline para temporada %d…", year)
+
+    # --- Obtener calendario ---
+    try:
+        schedule = fastf1.get_event_schedule(year, include_testing=False)
+    except Exception as exc:
+        logger.error("Error obteniendo calendario %d: %s", year, exc)
+        raise ValueError(
+            f"No se pudo obtener el calendario de la temporada {year}. "
+            "Verifica conectividad y que el año tenga datos en FastF1/Jolpica."
+        ) from exc
+
+    # Filtrar solo Grandes Premios (excluir eventos de prueba/sprint-only)
+    races = schedule[schedule["EventFormat"].isin(["conventional", "sprint", "sprint_shootout"])].copy()
+    if races.empty:
         raise ValueError(f"No se encontraron carreras para la temporada {year}")
 
-    # --- Paso 1: recolectar metadata de pilotos de todas las sesiones ---
-    all_driver_info: dict[int, dict] = {}  # driver_number → mejor metadata disponible
+    logger.info("Calendario %d: %d eventos encontrados", year, len(races))
+
+    # --- Procesar carrera a carrera ---
+    use_f1_api = year >= _F1_API_MIN_YEAR
+    cumulative: dict[str, float] = {}
+    driver_meta: dict[str, dict] = {}
     team_color_map: dict[str, str] = {}
     color_index = 0
-
-    logger.info("Recolectando metadata de pilotos…")
-    for session in sessions:
-        drivers = _fetch_drivers(session["session_key"])
-        for num, info in drivers.items():
-            # Preferir la entrada con más datos completos
-            if num not in all_driver_info or not all_driver_info[num].get("name_acronym"):
-                all_driver_info[num] = info
-        time.sleep(0.5)
-
-    logger.info("  → %d pilotos únicos identificados", len(all_driver_info))
-
-    # Construir driver_meta con acronym como clave
-    driver_meta: dict[str, dict] = {}
-    num_to_id: dict[int, str] = {}  # driver_number → driver_id final
-
-    for num, info in all_driver_info.items():
-        acronym    = (info.get("name_acronym") or "").strip()
-        driver_id  = acronym.lower() if acronym else f"drv{num}"
-        full_name  = info.get("full_name") or f"Driver {num}"
-        team_name  = info.get("team_name") or "Unknown"
-        team_colour = info.get("team_colour")
-        code        = acronym or str(num)
-
-        team_key = team_name.lower().strip()
-        if team_key not in team_color_map:
-            team_color_map[team_key] = _resolve_color(team_name, team_colour, color_index)
-            color_index += 1
-
-        num_to_id[num] = driver_id
-
-        if driver_id not in driver_meta:
-            driver_meta[driver_id] = {
-                "name":  full_name,
-                "color": team_color_map[team_key],
-                "team":  team_name,
-                "code":  code,
-            }
-
-    # --- Paso 2: procesar resultados carrera a carrera ---
-    cumulative: dict[str, float] = {}
     timeline = []
 
-    for i, session in enumerate(sessions, start=1):
-        session_key = session["session_key"]
-        date        = (session.get("date_start") or "")[:10]
-        location    = session.get("location", "")
-        race_name   = f"{location} Grand Prix" if location else f"Race {i}"
+    for idx, (_, event) in enumerate(races.iterrows(), start=1):
+        round_number = int(event["RoundNumber"])
+        location     = str(event.get("Location") or "")
+        event_name   = str(event.get("EventName") or f"Race {idx}")
+        event_date   = str(event.get("EventDate") or "")[:10]
+        race_name    = event_name if "Grand Prix" in event_name else f"{location} Grand Prix"
 
-        logger.info("  [%d/%d] %s (session_key=%d)", i, len(sessions), race_name, session_key)
+        logger.info(
+            "  [%d/%d] %s (ronda %d)", idx, len(races), race_name, round_number
+        )
 
-        results = _fetch_session_result(session_key)
+        # Intentar cargar resultados con la fuente correspondiente
+        df_raw = None
+        source_used = None
 
-        if not results:
-            logger.warning("    Sin resultados — omitiendo carrera %d", i)
+        if use_f1_api:
+            df_raw = _load_race_results_f1api(year, round_number)
+            if df_raw is not None:
+                source_used = "f1api"
+            else:
+                logger.info("    Fallback a Ergast para ronda %d", round_number)
+                df_raw = _load_race_results_ergast(year, round_number)
+                if df_raw is not None:
+                    source_used = "ergast_fallback"
+        else:
+            df_raw = _load_race_results_ergast(year, round_number)
+            if df_raw is not None:
+                source_used = "ergast"
+
+        if df_raw is None or df_raw.empty:
+            logger.warning("    Sin resultados — omitiendo ronda %d", round_number)
             continue
 
-        for entry in results:
-            drv_num = entry.get("driver_number")
-            points  = float(entry.get("points") or 0)
+        logger.info("    Fuente: %s | %d pilotos", source_used, len(df_raw))
 
-            if drv_num is None:
-                continue
+        # Parsear según fuente
+        if source_used in ("f1api",):
+            race_points, updates, color_index = _parse_results_f1api(
+                df_raw, team_color_map, color_index
+            )
+        else:
+            race_points, updates, color_index = _parse_results_ergast(
+                df_raw, team_color_map, color_index
+            )
 
-            # Resolver driver_id desde el número
-            driver_id = num_to_id.get(drv_num)
-            if not driver_id:
-                # Piloto no visto en /drivers — crear entrada mínima
-                driver_id = f"drv{drv_num}"
-                num_to_id[drv_num] = driver_id
-                if driver_id not in driver_meta:
-                    driver_meta[driver_id] = {
-                        "name":  f"Driver {drv_num}",
-                        "color": FALLBACK_COLORS[color_index % len(FALLBACK_COLORS)],
-                        "team":  "Unknown",
-                        "code":  str(drv_num),
-                    }
-                    color_index += 1
-                    logger.debug("    Piloto %d sin metadata — usando entrada genérica", drv_num)
+        # Actualizar metadata de pilotos (sin sobreescribir entradas ya conocidas)
+        for driver_id, meta in updates.items():
+            if driver_id not in driver_meta:
+                driver_meta[driver_id] = meta
 
-            cumulative[driver_id] = cumulative.get(driver_id, 0) + points
+        # Acumular puntos
+        for driver_id, pts in race_points.items():
+            cumulative[driver_id] = cumulative.get(driver_id, 0.0) + pts
 
         sorted_standings = sorted(cumulative.items(), key=lambda x: x[1], reverse=True)
 
         timeline.append({
-            "race":      i,
+            "race":      idx,
             "name":      race_name,
-            "circuit":   session.get("circuit_short_name", ""),
-            "date":      date,
+            "circuit":   str(event.get("OfficialEventName") or ""),
+            "date":      event_date,
             "standings": {did: pts for did, pts in sorted_standings},
             "leader":    sorted_standings[0][0] if sorted_standings else None,
         })
 
-        time.sleep(1.0)
+        # Pausa para no saturar las APIs
+        time.sleep(0.5)
 
     if not timeline:
         raise ValueError(f"No se generó timeline para la temporada {year}")
 
-    logger.info("Temporada %d: %d carreras, %d pilotos", year, len(timeline), len(driver_meta))
+    logger.info(
+        "Temporada %d completada: %d carreras, %d pilotos",
+        year, len(timeline), len(driver_meta),
+    )
     return {
         "year":       year,
         "totalRaces": len(timeline),
