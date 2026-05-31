@@ -841,8 +841,15 @@
 
   // ── INIT ───────────────────────────────────────────────────────────────
   async function init() {
-    const res = await fetch('/data/seasons.json');
-    const seasons = await res.json();
+    let seasons;
+    try {
+      const res = await fetch('/data/seasons.json');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      seasons = await res.json();
+    } catch (e) {
+      elLoadingState.innerHTML = '<p style="color:#e10600;font-family:sans-serif;text-align:center">⚠ Could not load seasons.json<br><small>' + e.message + '</small></p>';
+      return;
+    }
 
     seasons.forEach(year => {
       const opt = document.createElement('option');
@@ -867,8 +874,16 @@
     battleDrivers = [];
     highlightedDriver = null;
 
-    const res = await fetch(`/data/${year}.json`);
-    seasonData = await res.json();
+    let res;
+    try {
+      res = await fetch(`/data/${year}.json`);
+      if (!res.ok) throw new Error(`HTTP ${res.status} — /data/${year}.json`);
+      seasonData = await res.json();
+    } catch (e) {
+      elLoadingState.innerHTML = '<p style="color:#e10600;font-family:sans-serif;text-align:center">⚠ Error loading season ' + year + '<br><small>' + e.message + '</small></p>';
+      elSeasonSelect.disabled = false;
+      return;
+    }
     currentRace = seasonData.totalRaces;
 
     // Sort drivers by team then name
@@ -1154,6 +1169,8 @@
       li.classList.toggle('highlighted', highlightedDriver === id);
     });
   }
+
+  function toggleDriver(id) {
     if (battleMode) {
       const idx = battleDrivers.indexOf(id);
       if (idx >= 0) {
