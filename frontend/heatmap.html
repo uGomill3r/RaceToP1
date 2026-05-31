@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F1 Results Tracker — Heatmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;600;700;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-deep:      #080a0f;
+      --bg-surface:   #0d1117;
+      --bg-card:      #111827;
+      --bg-hover:     #1a2435;
+      --border:       #1e2d42;
+      --accent:       #e10600;
+      --text-primary:   #f0f4f8;
+      --text-secondary: #8899aa;
+      --text-muted:     #4a5568;
+      --glow-red:     0 0 20px rgba(225,6,0,0.4);
+      --font-display: 'Barlow Condensed', sans-serif;
+      --font-body:    'Barlow', sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font-body);
+      background: var(--bg-deep);
+      color: var(--text-primary);
+    }
+
+    body {
+      background-image:
+        radial-gradient(ellipse 80% 40% at 50% -10%, rgba(225,6,0,0.06) 0%, transparent 60%);
+    }
+
+    /* ── HEADER ── */
+    .header {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo { display: flex; align-items: center; gap: 14px; }
+
+    .f1-badge {
+      background: var(--accent);
+      color: white;
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 1.1rem;
+      letter-spacing: 0.08em;
+      padding: 4px 10px;
+      border-radius: 3px;
+      box-shadow: var(--glow-red);
+      line-height: 1;
+    }
+
+    .title-group { display: flex; flex-direction: column; line-height: 1; }
+    .title { font-family: var(--font-display); font-weight: 700; font-size: 1rem; letter-spacing: 0.12em; text-transform: uppercase; }
+    .subtitle { font-family: var(--font-display); font-weight: 300; font-size: 0.65rem; letter-spacing: 0.25em; color: var(--text-secondary); }
+
+    .nav { display: flex; align-items: center; gap: 16px; }
+
+    .nav-link {
+      font-family: var(--font-display);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      color: var(--text-secondary);
+      text-decoration: none;
+      text-transform: uppercase;
+      transition: color 0.15s;
+    }
+
+    .nav-link:hover { color: var(--text-primary); }
+    .nav-link.active { color: var(--accent); }
+
+    .select-wrapper { position: relative; }
+    .select-wrapper select {
+      appearance: none;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: 0.05em;
+      padding: 6px 32px 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .select-wrapper select:hover, .select-wrapper select:focus { outline: none; border-color: var(--accent); }
+    .select-wrapper select:disabled { opacity: 0.5; cursor: not-allowed; }
+    .select-arrow { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--accent); font-size: 0.75rem; pointer-events: none; }
+
+    /* ── LOADING ── */
+    .loading-state {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: calc(100vh - 64px); gap: 16px;
+    }
+    .spinner {
+      width: 48px; height: 48px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-state p { color: var(--text-secondary); font-family: var(--font-display); font-size: 0.95rem; letter-spacing: 0.1em; text-transform: uppercase; }
+
+    /* ── MAIN ── */
+    .main {
+      padding: 28px;
+      display: none;
+    }
+
+    .page-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.3rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .page-subtitle {
+      font-family: var(--font-display);
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    /* ── LEGEND ── */
+    .legend {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .legend-label { font-family: var(--font-display); font-size: 0.7rem; letter-spacing: 0.12em; color: var(--text-muted); }
+
+    .legend-bar {
+      display: flex;
+      height: 12px;
+      border-radius: 3px;
+      overflow: hidden;
+      width: 160px;
+      border: 1px solid var(--border);
+    }
+
+    .legend-bar-segment { flex: 1; }
+
+    /* ── TABLE WRAPPER ── */
+    .table-wrapper {
+      overflow-x: auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    table {
+      border-collapse: collapse;
+      min-width: 100%;
+      font-family: var(--font-display);
+    }
+
+    /* sticky driver column */
+    th.driver-col, td.driver-col {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      background: var(--bg-card);
+      min-width: 80px;
+    }
+
+    th {
+      padding: 10px 8px 8px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      text-align: center;
+      white-space: nowrap;
+      border-bottom: 1px solid var(--border);
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      height: 100px;
+    }
+
+    th.driver-col {
+      writing-mode: horizontal-tb;
+      transform: none;
+      text-align: left;
+      height: auto;
+      padding: 12px 16px 10px 16px;
+      font-size: 0.65rem;
+    }
+
+    th.total-col {
+      writing-mode: horizontal-tb;
+      transform: none;
+      min-width: 60px;
+      color: var(--text-secondary);
+    }
+
+    td {
+      text-align: center;
+      font-size: 0.82rem;
+      font-weight: 700;
+      border: 1px solid rgba(30,45,66,0.4);
+      padding: 0;
+      min-width: 38px;
+      height: 36px;
+      position: relative;
+      transition: filter 0.15s;
+      cursor: default;
+    }
+
+    td span {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+
+    td.driver-col {
+      text-align: left;
+      padding: 0 16px;
+      height: 36px;
+      border-left: none;
+      font-size: 0.85rem;
+      letter-spacing: 0.06em;
+    }
+
+    td.driver-col .driver-color-bar {
+      display: inline-block;
+      width: 3px;
+      height: 14px;
+      border-radius: 2px;
+      margin-right: 10px;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+
+    td.driver-col .driver-info {
+      display: flex;
+      align-items: center;
+      height: 100%;
+    }
+
+    td.driver-col .d-code {
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      color: var(--text-primary);
+    }
+
+    td.total-col {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      background: rgba(255,255,255,0.03);
+      border-left: 1px solid var(--border);
+    }
+
+    tr:hover td { filter: brightness(1.25); }
+    tr:hover td.driver-col, tr:hover td.total-col { filter: none; background: var(--bg-hover); }
+
+    /* Tooltip */
+    .tooltip {
+      position: fixed;
+      background: #111827;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-family: var(--font-display);
+      font-size: 0.8rem;
+      pointer-events: none;
+      z-index: 1000;
+      display: none;
+      white-space: nowrap;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+
+    .tooltip .t-race { color: var(--text-secondary); font-size: 0.72rem; letter-spacing: 0.1em; margin-bottom: 4px; }
+    .tooltip .t-driver { color: var(--text-primary); font-weight: 700; margin-bottom: 2px; }
+    .tooltip .t-pts { color: var(--accent); font-size: 1.1rem; font-weight: 900; }
+    .tooltip .t-pts-label { color: var(--text-muted); font-size: 0.7rem; margin-left: 4px; }
+    .tooltip .t-cumul { color: var(--text-muted); font-size: 0.75rem; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <div class="f1-badge">F1</div>
+    <div class="title-group">
+      <span class="title">Championship</span>
+      <span class="subtitle">VISUALIZER</span>
+    </div>
+  </div>
+  <nav class="nav">
+    <a href="index.html" class="nav-link">Points Chart</a>
+    <a href="heatmap.html" class="nav-link active">Heatmap</a>
+    <div class="select-wrapper">
+      <select id="season-select" disabled></select>
+      <div class="select-arrow">▾</div>
+    </div>
+  </nav>
+</header>
+
+<div id="loading-state" class="loading-state">
+  <div class="spinner"></div>
+  <p>Loading season data…</p>
+</div>
+
+<main id="main" class="main">
+  <h1 class="page-title">Results Tracker — <span id="season-year"></span></h1>
+  <p class="page-subtitle">Points scored per race · Drivers ranked by total points · Darker = more points</p>
+
+  <div class="legend">
+    <span class="legend-label">0</span>
+    <div class="legend-bar" id="legend-bar"></div>
+    <span class="legend-label">25 pts</span>
+  </div>
+
+  <div class="table-wrapper">
+    <table id="heatmap-table"></table>
+  </div>
+</main>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+  const MAX_PTS = 25;
+
+  // Blue scale matching FastF1 reference
+  function ptsToColor(pts) {
+    if (!pts || pts === 0) return 'rgba(30,45,66,0.3)';
+    const t = Math.min(pts / MAX_PTS, 1);
+    // Interpolate: low = rgb(198,219,239) → high = rgb(8,48,107)
+    const r = Math.round(198 + (8   - 198) * t);
+    const g = Math.round(219 + (48  - 219) * t);
+    const b = Math.round(239 + (107 - 239) * t);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  function textColor(pts) {
+    if (!pts || pts === 0) return 'var(--text-muted)';
+    const t = Math.min(pts / MAX_PTS, 1);
+    return t > 0.45 ? '#ffffff' : '#0a1929';
+  }
+
+  // Build legend
+  const legendBar = document.getElementById('legend-bar');
+  for (let i = 0; i <= 20; i++) {
+    const seg = document.createElement('div');
+    seg.className = 'legend-bar-segment';
+    seg.style.background = ptsToColor(i * MAX_PTS / 20);
+    legendBar.appendChild(seg);
+  }
+
+  const elSeasonSelect  = document.getElementById('season-select');
+  const elLoadingState  = document.getElementById('loading-state');
+  const elMain          = document.getElementById('main');
+  const elTable         = document.getElementById('heatmap-table');
+  const elSeasonYear    = document.getElementById('season-year');
+  const elTooltip       = document.getElementById('tooltip');
+
+  async function init() {
+    let seasons;
+    try {
+      const res = await fetch('/data/seasons.json');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      seasons = await res.json();
+    } catch (e) {
+      elLoadingState.innerHTML = '<p style="color:#e10600">⚠ Could not load seasons.json: ' + e.message + '</p>';
+      return;
+    }
+
+    seasons.forEach(year => {
+      const opt = document.createElement('option');
+      opt.value = year;
+      opt.textContent = year;
+      elSeasonSelect.appendChild(opt);
+    });
+
+    elSeasonSelect.addEventListener('change', () => loadSeason(Number(elSeasonSelect.value)));
+    await loadSeason(seasons[0]);
+  }
+
+  async function loadSeason(year) {
+    elSeasonSelect.disabled = true;
+    elLoadingState.style.display = 'flex';
+    elMain.style.display = 'none';
+
+    let data;
+    try {
+      const res = await fetch('/data/' + year + '.json');
+      if (!res.ok) throw new Error('HTTP ' + res.status + ' — /data/' + year + '.json');
+      data = await res.json();
+    } catch (e) {
+      elLoadingState.innerHTML = '<p style="color:#e10600">⚠ Error: ' + e.message + '</p>';
+      elSeasonSelect.disabled = false;
+      return;
+    }
+
+    elSeasonSelect.value = year;
+    elSeasonYear.textContent = year;
+    buildTable(data);
+
+    elSeasonSelect.disabled = false;
+    elLoadingState.style.display = 'none';
+    elMain.style.display = 'block';
+  }
+
+  function buildTable(data) {
+    const { drivers, timeline } = data;
+    const driverIds = Object.keys(drivers);
+
+    // Compute per-race points (delta between cumulative standings)
+    const perRace = {}; // perRace[driverId][raceIndex] = pts
+    driverIds.forEach(id => { perRace[id] = []; });
+
+    timeline.forEach((snap, i) => {
+      const prev = i > 0 ? timeline[i - 1].standings : {};
+      driverIds.forEach(id => {
+        const cur = snap.standings[id] ?? 0;
+        const prv = prev[id] ?? 0;
+        perRace[id].push(Math.max(0, cur - prv));
+      });
+    });
+
+    // Total points per driver (from last race standings)
+    const lastStandings = timeline.length > 0 ? timeline[timeline.length - 1].standings : {};
+    const totals = {};
+    driverIds.forEach(id => { totals[id] = lastStandings[id] ?? 0; });
+
+    // Sort drivers by total points desc
+    const sorted = [...driverIds].sort((a, b) => totals[b] - totals[a]);
+
+    // Only include completed races
+    const races = timeline;
+
+    // Build table HTML
+    let html = '<thead><tr>';
+    html += '<th class="driver-col">DRIVER</th>';
+    races.forEach(r => {
+      const short = r.name.replace(' Grand Prix', '').replace(' Grand', '');
+      html += '<th title="' + r.name + '">' + short + '</th>';
+    });
+    html += '<th class="total-col">TOTAL</th>';
+    html += '</tr></thead><tbody>';
+
+    sorted.forEach(id => {
+      const driver = drivers[id];
+      const color = driver.color ?? '#888';
+      html += '<tr data-driver="' + id + '">';
+      html += '<td class="driver-col">';
+      html += '<div class="driver-info">';
+      html += '<span class="driver-color-bar" style="background:' + color + ';box-shadow:0 0 6px ' + color + '80"></span>';
+      html += '<span class="d-code">' + driver.code + '</span>';
+      html += '</div></td>';
+
+      perRace[id].forEach((pts, i) => {
+        const bg = ptsToColor(pts);
+        const fg = textColor(pts);
+        const display = pts > 0 ? pts : '';
+        html += '<td style="background:' + bg + ';color:' + fg + '" '
+              + 'data-pts="' + pts + '" '
+              + 'data-race-idx="' + i + '" '
+              + 'data-driver="' + id + '">'
+              + '<span>' + display + '</span></td>';
+      });
+
+      html += '<td class="total-col"><span>' + totals[id] + '</span></td>';
+      html += '</tr>';
+    });
+
+    html += '</tbody>';
+    elTable.innerHTML = html;
+
+    // Tooltip
+    elTable.addEventListener('mousemove', e => {
+      const td = e.target.closest('td[data-pts]');
+      if (!td) { elTooltip.style.display = 'none'; return; }
+
+      const driverId = td.dataset.driver;
+      const raceIdx  = Number(td.dataset.raceIdx);
+      const pts      = Number(td.dataset.pts);
+      const driver   = drivers[driverId];
+      const race     = races[raceIdx];
+
+      // Cumulative at that race
+      const cumul = timeline[raceIdx]?.standings[driverId] ?? 0;
+
+      elTooltip.innerHTML =
+        '<div class="t-race">' + (race?.name ?? '') + ' &middot; ' + (race?.date ?? '') + '</div>' +
+        '<div class="t-driver" style="color:' + (driver?.color ?? '#fff') + '">' + (driver?.name ?? driverId) + '</div>' +
+        '<div><span class="t-pts">' + pts + '</span><span class="t-pts-label">pts this race</span></div>' +
+        '<div class="t-cumul">Cumulative: ' + cumul + ' pts</div>';
+
+      elTooltip.style.display = 'block';
+      const x = e.clientX + 14;
+      const y = e.clientY - 10;
+      elTooltip.style.left = Math.min(x, window.innerWidth - 220) + 'px';
+      elTooltip.style.top  = y + 'px';
+    });
+
+    elTable.addEventListener('mouseleave', () => { elTooltip.style.display = 'none'; });
+  }
+
+  init();
+</script>
+</body>
+</html>
