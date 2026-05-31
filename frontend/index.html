@@ -11,17 +11,17 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg-deep:      #080a0f;
-      --bg-surface:   #0d1117;
-      --bg-card:      #111827;
-      --bg-hover:     #1a2435;
-      --border:       #1e2d42;
+      --bg-deep:      #f0f2f5;
+      --bg-surface:   #ffffff;
+      --bg-card:      #f8f9fb;
+      --bg-hover:     #eef0f4;
+      --border:       #dde1e8;
       --accent:       #e10600;
-      --accent-dim:   #8c0400;
-      --text-primary:   #f0f4f8;
-      --text-secondary: #8899aa;
-      --text-muted:     #4a5568;
-      --glow-red:     0 0 20px rgba(225,6,0,0.4);
+      --accent-dim:   #b30400;
+      --text-primary:   #0d1117;
+      --text-secondary: #4a5568;
+      --text-muted:     #8899aa;
+      --glow-red:     0 0 20px rgba(225,6,0,0.25);
       --font-display: 'Barlow Condensed', sans-serif;
       --font-body:    'Barlow', sans-serif;
     }
@@ -36,8 +36,8 @@
 
     body {
       background-image:
-        radial-gradient(ellipse 80% 40% at 50% -10%, rgba(225,6,0,0.06) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 30% at 80% 100%, rgba(54,113,198,0.04) 0%, transparent 50%);
+        radial-gradient(ellipse 80% 40% at 50% -10%, rgba(225,6,0,0.04) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 30% at 80% 100%, rgba(54,113,198,0.03) 0%, transparent 50%);
     }
 
     button { cursor: pointer; font-family: var(--font-body); }
@@ -983,11 +983,11 @@
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#111827',
-            borderColor: '#1e2d42',
+            backgroundColor: '#ffffff',
+            borderColor: '#dde1e8',
             borderWidth: 1,
-            titleColor: '#8899aa',
-            bodyColor: '#f0f4f8',
+            titleColor: '#4a5568',
+            bodyColor: '#0d1117',
             titleFont: { family: "'Barlow Condensed', sans-serif", size: 11, weight: '600' },
             bodyFont: { family: "'Barlow', sans-serif", size: 12 },
             padding: 10,
