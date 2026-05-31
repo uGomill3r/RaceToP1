@@ -20,23 +20,11 @@
       "team": "Mercedes",
       "color": "#27F4D2"
     },
-    "paul_aron": {
-      "name": "Paul Aron",
-      "code": "PAU",
-      "team": "",
-      "color": "#888888"
-    },
     "bearman": {
       "name": "Oliver Bearman",
       "code": "BEA",
       "team": "Haas F1 Team",
       "color": "#B6BABD"
-    },
-    "dino_beganovic": {
-      "name": "Dino Beganovic",
-      "code": "DIN",
-      "team": "",
-      "color": "#888888"
     },
     "bortoleto": {
       "name": "Gabriel Bortoleto",
@@ -44,47 +32,11 @@
       "team": "Sauber",
       "color": "#52E252"
     },
-    "luke_browning": {
-      "name": "Luke Browning",
-      "code": "LUK",
-      "team": "",
-      "color": "#888888"
-    },
-    "colapinto": {
-      "name": "Franco Colapinto",
-      "code": "COL",
-      "team": "",
-      "color": "#888888"
-    },
-    "jak_crawford": {
-      "name": "Jak Crawford",
-      "code": "JAK",
-      "team": "",
-      "color": "#888888"
-    },
     "doohan": {
       "name": "Jack Doohan",
       "code": "DOO",
       "team": "Alpine F1 Team",
       "color": "#0093CC"
-    },
-    "felipe_drugovich": {
-      "name": "Felipe Drugovich",
-      "code": "FEL",
-      "team": "",
-      "color": "#888888"
-    },
-    "alexander_dunne": {
-      "name": "Alexander Dunne",
-      "code": "ALE",
-      "team": "",
-      "color": "#888888"
-    },
-    "antonio_fuoco": {
-      "name": "Antonio Fuoco",
-      "code": "ANT",
-      "team": "",
-      "color": "#888888"
     },
     "gasly": {
       "name": "Pierre Gasly",
@@ -104,23 +56,11 @@
       "team": "Ferrari",
       "color": "#E80020"
     },
-    "ryo_hirakawa": {
-      "name": "Ryo Hirakawa",
-      "code": "RYO",
-      "team": "",
-      "color": "#888888"
-    },
     "hulkenberg": {
       "name": "Nico Hülkenberg",
       "code": "HUL",
       "team": "Sauber",
       "color": "#52E252"
-    },
-    "ayumu_iwasa": {
-      "name": "Ayumu Iwasa",
-      "code": "AYU",
-      "team": "",
-      "color": "#888888"
     },
     "lawson": {
       "name": "Liam Lawson",
@@ -134,35 +74,11 @@
       "team": "Ferrari",
       "color": "#E80020"
     },
-    "arthur_leclerc": {
-      "name": "Arthur Leclerc",
-      "code": "ART",
-      "team": "",
-      "color": "#888888"
-    },
-    "arvid_lindblad": {
-      "name": "Arvid Lindblad",
-      "code": "LIN",
-      "team": "",
-      "color": "#888888"
-    },
-    "victor_martins": {
-      "name": "Victor Martins",
-      "code": "VIC",
-      "team": "",
-      "color": "#888888"
-    },
     "norris": {
       "name": "Lando Norris",
       "code": "NOR",
       "team": "McLaren",
       "color": "#FF8000"
-    },
-    "patricio_o_ward": {
-      "name": "Patricio O'Ward",
-      "code": "PAT",
-      "team": "",
-      "color": "#888888"
     },
     "ocon": {
       "name": "Esteban Ocon",
@@ -188,12 +104,6 @@
       "team": "Williams",
       "color": "#64C4FF"
     },
-    "cian_shields": {
-      "name": "Cian Shields",
-      "code": "CIA",
-      "team": "",
-      "color": "#888888"
-    },
     "stroll": {
       "name": "Lance Stroll",
       "code": "STR",
@@ -212,11 +122,11 @@
       "team": "Red Bull",
       "color": "#3671C6"
     },
-    "frederik_vesti": {
-      "name": "Frederik Vesti",
-      "code": "FRE",
-      "team": "",
-      "color": "#888888"
+    "colapinto": {
+      "name": "Franco Colapinto",
+      "code": "COL",
+      "team": "Alpine F1 Team",
+      "color": "#0093CC"
     }
   },
   "timeline": [
@@ -237,31 +147,15 @@
         "piastri": 2.0,
         "hamilton": 1.0,
         "alonso": 0.0,
-        "paul_aron": 0.0,
         "bearman": 0.0,
-        "dino_beganovic": 0.0,
         "bortoleto": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
         "gasly": 0.0,
         "hadjar": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
         "lawson": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
         "ocon": 0.0,
         "sainz": 0.0,
-        "cian_shields": 0.0,
-        "tsunoda": 0.0,
-        "frederik_vesti": 0.0
+        "tsunoda": 0.0
       },
       "leader": "norris"
     },
@@ -286,27 +180,11 @@
         "tsunoda": 3.0,
         "sainz": 1.0,
         "alonso": 0.0,
-        "paul_aron": 0.0,
-        "dino_beganovic": 0.0,
         "bortoleto": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
         "gasly": 0.0,
         "hadjar": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
-        "lawson": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
-        "cian_shields": 0.0,
-        "frederik_vesti": 0.0
+        "lawson": 0.0
       },
       "leader": "norris"
     },
@@ -332,26 +210,10 @@
         "tsunoda": 3.0,
         "sainz": 1.0,
         "alonso": 0.0,
-        "paul_aron": 0.0,
-        "dino_beganovic": 0.0,
         "bortoleto": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
         "gasly": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
-        "lawson": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
-        "cian_shields": 0.0,
-        "frederik_vesti": 0.0
+        "lawson": 0.0
       },
       "leader": "norris"
     },
@@ -378,25 +240,9 @@
         "hadjar": 4.0,
         "sainz": 1.0,
         "alonso": 0.0,
-        "paul_aron": 0.0,
-        "dino_beganovic": 0.0,
         "bortoleto": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
-        "lawson": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
-        "cian_shields": 0.0,
-        "frederik_vesti": 0.0
+        "lawson": 0.0
       },
       "leader": "norris"
     },
@@ -423,25 +269,9 @@
         "sainz": 5.0,
         "tsunoda": 5.0,
         "alonso": 0.0,
-        "paul_aron": 0.0,
-        "dino_beganovic": 0.0,
         "bortoleto": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
-        "lawson": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
-        "cian_shields": 0.0,
-        "frederik_vesti": 0.0
+        "lawson": 0.0
       },
       "leader": "piastri"
     },
@@ -468,25 +298,9 @@
         "hulkenberg": 6.0,
         "hadjar": 5.0,
         "alonso": 0.0,
-        "paul_aron": 0.0,
-        "dino_beganovic": 0.0,
         "bortoleto": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
-        "lawson": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
-        "cian_shields": 0.0,
-        "frederik_vesti": 0.0
+        "lawson": 0.0
       },
       "leader": "piastri"
     },
@@ -513,25 +327,10 @@
         "bearman": 6.0,
         "hulkenberg": 6.0,
         "alonso": 0.0,
-        "paul_aron": 0.0,
-        "dino_beganovic": 0.0,
         "bortoleto": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
         "lawson": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
-        "cian_shields": 0.0,
-        "frederik_vesti": 0.0
+        "colapinto": 0.0
       },
       "leader": "piastri"
     },
@@ -559,24 +358,9 @@
         "hulkenberg": 6.0,
         "lawson": 4.0,
         "alonso": 0.0,
-        "paul_aron": 0.0,
-        "dino_beganovic": 0.0,
         "bortoleto": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
-        "cian_shields": 0.0,
-        "frederik_vesti": 0.0
+        "colapinto": 0.0
       },
       "leader": "piastri"
     },
@@ -604,24 +388,9 @@
         "bearman": 6.0,
         "lawson": 4.0,
         "alonso": 2.0,
-        "paul_aron": 0.0,
-        "dino_beganovic": 0.0,
         "bortoleto": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
-        "cian_shields": 0.0,
-        "frederik_vesti": 0.0
+        "colapinto": 0.0
       },
       "leader": "piastri"
     },
@@ -649,24 +418,9 @@
         "alonso": 8.0,
         "bearman": 6.0,
         "lawson": 4.0,
-        "paul_aron": 0.0,
-        "dino_beganovic": 0.0,
         "bortoleto": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
-        "cian_shields": 0.0,
-        "frederik_vesti": 0.0
+        "colapinto": 0.0
       },
       "leader": "piastri"
     },
@@ -695,23 +449,8 @@
         "tsunoda": 10.0,
         "bearman": 6.0,
         "bortoleto": 4.0,
-        "paul_aron": 0.0,
-        "dino_beganovic": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
-        "cian_shields": 0.0,
-        "frederik_vesti": 0.0
+        "colapinto": 0.0
       },
       "leader": "piastri"
     },
@@ -740,23 +479,8 @@
         "tsunoda": 10.0,
         "bearman": 6.0,
         "bortoleto": 4.0,
-        "paul_aron": 0.0,
-        "dino_beganovic": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
-        "cian_shields": 0.0,
-        "frederik_vesti": 0.0
+        "colapinto": 0.0
       },
       "leader": "piastri"
     },
@@ -785,23 +509,8 @@
         "tsunoda": 10.0,
         "bearman": 8.0,
         "bortoleto": 6.0,
-        "paul_aron": 0.0,
-        "dino_beganovic": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
-        "cian_shields": 0.0,
-        "frederik_vesti": 0.0
+        "colapinto": 0.0
       },
       "leader": "piastri"
     },
@@ -830,23 +539,8 @@
         "bortoleto": 14.0,
         "tsunoda": 10.0,
         "bearman": 8.0,
-        "paul_aron": 0.0,
-        "dino_beganovic": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
-        "cian_shields": 0.0,
-        "frederik_vesti": 0.0
+        "colapinto": 0.0
       },
       "leader": "piastri"
     },
@@ -875,23 +569,8 @@
         "sainz": 16.0,
         "bortoleto": 14.0,
         "tsunoda": 12.0,
-        "paul_aron": 0.0,
-        "dino_beganovic": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
-        "cian_shields": 0.0,
-        "frederik_vesti": 0.0
+        "colapinto": 0.0
       },
       "leader": "piastri"
     },
@@ -920,23 +599,8 @@
         "bearman": 16.0,
         "sainz": 16.0,
         "tsunoda": 12.0,
-        "paul_aron": 0.0,
-        "dino_beganovic": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
-        "cian_shields": 0.0,
-        "frederik_vesti": 0.0
+        "colapinto": 0.0
       },
       "leader": "piastri"
     },
@@ -965,23 +629,8 @@
         "tsunoda": 20.0,
         "bortoleto": 18.0,
         "bearman": 16.0,
-        "paul_aron": 0.0,
-        "dino_beganovic": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
-        "cian_shields": 0.0,
-        "frederik_vesti": 0.0
+        "colapinto": 0.0
       },
       "leader": "piastri"
     },
@@ -1010,23 +659,8 @@
         "tsunoda": 20.0,
         "bearman": 18.0,
         "bortoleto": 18.0,
-        "paul_aron": 0.0,
-        "dino_beganovic": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
-        "cian_shields": 0.0,
-        "frederik_vesti": 0.0
+        "colapinto": 0.0
       },
       "leader": "piastri"
     },
@@ -1055,23 +689,8 @@
         "bearman": 20.0,
         "gasly": 20.0,
         "bortoleto": 18.0,
-        "paul_aron": 0.0,
-        "dino_beganovic": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
-        "cian_shields": 0.0,
-        "frederik_vesti": 0.0
+        "colapinto": 0.0
       },
       "leader": "piastri"
     },
@@ -1100,23 +719,8 @@
         "tsunoda": 28.0,
         "gasly": 20.0,
         "bortoleto": 19.0,
-        "paul_aron": 0.0,
-        "dino_beganovic": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
-        "cian_shields": 0.0,
-        "frederik_vesti": 0.0
+        "colapinto": 0.0
       },
       "leader": "norris"
     },
@@ -1145,23 +749,8 @@
         "tsunoda": 28.0,
         "gasly": 22.0,
         "bortoleto": 19.0,
-        "paul_aron": 0.0,
-        "dino_beganovic": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
-        "cian_shields": 0.0,
-        "frederik_vesti": 0.0
+        "colapinto": 0.0
       },
       "leader": "norris"
     },
@@ -1190,23 +779,8 @@
         "tsunoda": 28.0,
         "gasly": 22.0,
         "bortoleto": 19.0,
-        "paul_aron": 0.0,
-        "dino_beganovic": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
-        "cian_shields": 0.0,
-        "frederik_vesti": 0.0
+        "colapinto": 0.0
       },
       "leader": "norris"
     },
@@ -1235,23 +809,8 @@
         "stroll": 32.0,
         "gasly": 22.0,
         "bortoleto": 19.0,
-        "paul_aron": 0.0,
-        "dino_beganovic": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
-        "cian_shields": 0.0,
-        "frederik_vesti": 0.0
+        "colapinto": 0.0
       },
       "leader": "norris"
     },
@@ -1280,23 +839,8 @@
         "tsunoda": 33.0,
         "gasly": 22.0,
         "bortoleto": 19.0,
-        "paul_aron": 0.0,
-        "dino_beganovic": 0.0,
-        "luke_browning": 0.0,
-        "colapinto": 0.0,
-        "jak_crawford": 0.0,
         "doohan": 0.0,
-        "felipe_drugovich": 0.0,
-        "alexander_dunne": 0.0,
-        "antonio_fuoco": 0.0,
-        "ryo_hirakawa": 0.0,
-        "ayumu_iwasa": 0.0,
-        "arthur_leclerc": 0.0,
-        "arvid_lindblad": 0.0,
-        "victor_martins": 0.0,
-        "patricio_o_ward": 0.0,
-        "cian_shields": 0.0,
-        "frederik_vesti": 0.0
+        "colapinto": 0.0
       },
       "leader": "norris"
     }

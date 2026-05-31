@@ -336,7 +336,7 @@
   <div class="legend">
     <span class="legend-label">0</span>
     <div class="legend-bar" id="legend-bar"></div>
-    <span class="legend-label">25 pts</span>
+    <span class="legend-label" id="legend-max">25 pts</span>
   </div>
 
   <div class="table-wrapper">
@@ -347,32 +347,32 @@
 <div class="tooltip" id="tooltip"></div>
 
 <script>
-  const MAX_PTS = 25;
-
-  // Blue scale matching FastF1 reference
-  function ptsToColor(pts) {
-    if (!pts || pts === 0) return 'rgba(30,45,66,0.3)';
-    const t = Math.min(pts / MAX_PTS, 1);
-    // Interpolate: low = rgb(198,219,239) → high = rgb(8,48,107)
+  // Blue scale matching FastF1 reference — maxPts se calcula por temporada
+  function ptsToColor(pts, maxPts) {
+    if (!pts || pts === 0) return 'rgba(209,220,232,0.4)';
+    const t = Math.min(pts / maxPts, 1);
     const r = Math.round(198 + (8   - 198) * t);
     const g = Math.round(219 + (48  - 219) * t);
     const b = Math.round(239 + (107 - 239) * t);
     return `rgb(${r},${g},${b})`;
   }
 
-  function textColor(pts) {
+  function textColor(pts, maxPts) {
     if (!pts || pts === 0) return 'var(--text-muted)';
-    const t = Math.min(pts / MAX_PTS, 1);
+    const t = Math.min(pts / maxPts, 1);
     return t > 0.45 ? '#ffffff' : '#0a1929';
   }
 
-  // Build legend
-  const legendBar = document.getElementById('legend-bar');
-  for (let i = 0; i <= 20; i++) {
-    const seg = document.createElement('div');
-    seg.className = 'legend-bar-segment';
-    seg.style.background = ptsToColor(i * MAX_PTS / 20);
-    legendBar.appendChild(seg);
+  function buildLegend(maxPts) {
+    const legendBar = document.getElementById('legend-bar');
+    legendBar.innerHTML = '';
+    for (let i = 0; i <= 20; i++) {
+      const seg = document.createElement('div');
+      seg.className = 'legend-bar-segment';
+      seg.style.background = ptsToColor(i * maxPts / 20, maxPts);
+      legendBar.appendChild(seg);
+    }
+    document.getElementById('legend-max').textContent = maxPts + ' pts';
   }
 
   const elSeasonSelect  = document.getElementById('season-select');
@@ -454,6 +454,11 @@
     // Sort drivers by total points desc
     const sorted = [...driverIds].sort((a, b) => totals[b] - totals[a]);
 
+    // Max points scored in a single race this season (for color scale)
+    const allPerRacePts = Object.values(perRace).flat();
+    const maxPts = Math.max(...allPerRacePts, 1);
+    buildLegend(maxPts);
+
     // Only include completed races
     const races = timeline;
 
@@ -478,8 +483,8 @@
       html += '</div></td>';
 
       perRace[id].forEach((pts, i) => {
-        const bg = ptsToColor(pts);
-        const fg = textColor(pts);
+        const bg = ptsToColor(pts, maxPts);
+        const fg = textColor(pts, maxPts);
         const display = pts > 0 ? pts : '';
         html += '<td style="background:' + bg + ';color:' + fg + '" '
               + 'data-pts="' + pts + '" '
