@@ -374,6 +374,7 @@
     }
 
     .standing-row:hover { background: var(--bg-hover); }
+    .standing-row.lb-locked { outline: 1px solid currentColor; outline-offset: -1px; }
     .standing-row.leader { background: rgba(255,255,255,0.02); }
 
     .pos {
@@ -1575,7 +1576,9 @@
       const lastName = d.name.split(' ').pop();
       const isHighlightedRow = highlightedDriver === d.id;
       html += `
-        <li class="standing-row ${i === 0 ? 'leader' : ''}" style="${isHighlightedRow ? `background:${d.color}18;` : ''}">
+        <li class="standing-row ${i === 0 ? 'leader' : ''} ${lockedDriver === d.id ? 'lb-locked' : ''}"
+            data-driver-id="${d.id}"
+            style="cursor:pointer;${isHighlightedRow ? `background:${d.color}18;` : ''}">
           <span class="pos">${i + 1}</span>
           <span class="indicator" style="background:${d.color};box-shadow:0 0 6px ${d.color}80"></span>
           <span class="s-name" style="${isHighlightedRow ? `color:${d.color};font-weight:700;` : ''}">${lastName}</span>
@@ -1591,6 +1594,25 @@
 
     html += '</ol>';
     elLbBody.innerHTML = html;
+
+    // Attach click listeners to each standing row
+    elLbBody.querySelectorAll('.standing-row[data-driver-id]').forEach(row => {
+      const driverId = row.dataset.driverId;
+      row.addEventListener('click', () => {
+        if (lockedDriver === driverId) {
+          lockedDriver = null;
+          highlightedDriver = null;
+          hoverSnap = null;
+        } else {
+          lockedDriver = driverId;
+          highlightedDriver = driverId;
+          // keep hoverSnap if already set (preserves race context)
+        }
+        applyHighlightToChart();
+        updateDriverHighlight();
+        updateLeaderboard();
+      });
+    });
   }
 
   // ── DRIVER LIST ────────────────────────────────────────────────────────
