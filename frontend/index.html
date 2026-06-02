@@ -984,7 +984,7 @@
           <span class="section-title">STANDINGS</span>
           <span id="race-tag"></span>
         </div>
-        <div class="lb-top10-label">TOP 10</div>
+
         <div id="lb-body">
           <div class="lb-empty">Press play to begin</div>
         </div>
@@ -1582,6 +1582,7 @@
       html += `<div class="lb-hover-notice">— ${hoverSnap.raceName}</div>`;
     }
 
+    if (!isHover) html += '<div class="lb-top10-label">TOP 10</div>';
     html += '<ol class="standings-list">';
 
     displayList.forEach((d, i) => {
