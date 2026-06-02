@@ -308,6 +308,30 @@
     }
 
     .race-tag { background: rgba(255,255,255,0.07); color: var(--text-secondary); }
+
+    .race-nav {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-race-nav {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-size: 0.55rem;
+      width: 20px;
+      height: 20px;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.15s, color 0.15s;
+      padding: 0;
+      line-height: 1;
+    }
+    .btn-race-nav:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .btn-race-nav:disabled { opacity: 0.25; cursor: not-allowed; }
     .final-tag { background: rgba(225,6,0,0.15); color: var(--accent); }
 
     .lb-top10-label {
@@ -982,7 +1006,12 @@
       <div class="leaderboard" id="leaderboard">
         <div class="lb-header">
           <span class="section-title">STANDINGS</span>
-          <span id="race-tag"></span>
+          <div class="race-nav" id="race-nav" style="display:none">
+            <button id="btn-race-prev" class="btn-race-nav" title="Previous race">&#x25C0;</button>
+            <span id="race-tag"></span>
+            <button id="btn-race-next" class="btn-race-nav" title="Next race">&#x25B6;</button>
+          </div>
+          <span id="race-tag-plain"></span>
         </div>
 
         <div id="lb-body">
@@ -1072,6 +1101,10 @@
   const elLbBody        = document.getElementById('lb-body');
   const elLeaderboard   = document.getElementById('leaderboard');
   const elRaceTag       = document.getElementById('race-tag');
+  const elRaceTagPlain  = document.getElementById('race-tag-plain');
+  const elRaceNav       = document.getElementById('race-nav');
+  const elBtnRacePrev   = document.getElementById('btn-race-prev');
+  const elBtnRaceNext   = document.getElementById('btn-race-next');
   // Sidebar driver controls
   const elBtnShowAll    = document.getElementById('btn-show-all');
   const elBtnHideAll    = document.getElementById('btn-hide-all');
@@ -1539,19 +1572,35 @@
     const snapIndex = isHover ? hoverSnap.raceIndex : currentRace - 1;
     const standings = getStandingsFromSnap(snapIndex);
 
-    // Race tag: en hover muestra badge diferenciado
-    if (isHover) {
-      elRaceTag.textContent = `R${hoverSnap.raceIndex + 1}`;
+    // Race tag / nav: muestra nav con prev+next cuando hay lock, tag simple si no
+    if (lockedDriver && isHover) {
+      // Lock activo con carrera concreta → mostrar nav
+      const raceNum = hoverSnap.raceIndex + 1;
+      elRaceNav.style.display = 'flex';
+      elRaceTagPlain.textContent = '';
+      elRaceTag.textContent = `R${raceNum}`;
       elRaceTag.className = 'lb-hover-badge';
-    } else if (currentRace === 0) {
-      elRaceTag.textContent = '';
-      elRaceTag.className = '';
-    } else if (currentRace < total) {
-      elRaceTag.textContent = `R${currentRace}`;
-      elRaceTag.className = 'race-tag';
+      elBtnRacePrev.disabled = raceNum <= 1;
+      elBtnRaceNext.disabled = raceNum >= total;
     } else {
-      elRaceTag.textContent = 'FINAL';
-      elRaceTag.className = 'final-tag';
+      elRaceNav.style.display = 'none';
+      if (isHover) {
+        elRaceTagPlain.textContent = '';
+        elRaceTag.textContent = `R${hoverSnap.raceIndex + 1}`;
+        elRaceTag.className = 'lb-hover-badge';
+      } else if (currentRace === 0) {
+        elRaceTagPlain.textContent = '';
+        elRaceTag.textContent = '';
+        elRaceTag.className = '';
+      } else if (currentRace < total) {
+        elRaceTagPlain.textContent = `R${currentRace}`;
+        elRaceTagPlain.className = 'race-tag';
+        elRaceTag.textContent = '';
+      } else {
+        elRaceTagPlain.textContent = 'FINAL';
+        elRaceTagPlain.className = 'final-tag';
+        elRaceTag.textContent = '';
+      }
     }
 
     if (!standings.length) {
@@ -1899,6 +1948,21 @@
   elBtnShowAllD.addEventListener('click', showAll);
   elBtnHideAllD.addEventListener('click', hideAll);
   elBtnBattleD.addEventListener('click', toggleBattleMode);
+
+  // Navegación de carrera desde el leaderboard (solo con lock activo)
+  function navigateRace(delta) {
+    if (!lockedDriver || !hoverSnap || !seasonData) return;
+    const newIndex = hoverSnap.raceIndex + delta;
+    if (newIndex < 0 || newIndex >= seasonData.totalRaces) return;
+    const snap = seasonData.timeline[newIndex];
+    hoverSnap = { raceIndex: newIndex, raceName: snap.name };
+    applyHighlightToChart();
+    updateDriverHighlight();
+    updateLeaderboard();
+  }
+
+  elBtnRacePrev.addEventListener('click', e => { e.stopPropagation(); navigateRace(-1); });
+  elBtnRaceNext.addEventListener('click', e => { e.stopPropagation(); navigateRace(+1); });
 
   // Clic fuera del canvas y fuera del sidebar → limpiar lock
   document.addEventListener('click', e => {
