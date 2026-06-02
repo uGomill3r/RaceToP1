@@ -448,7 +448,68 @@
       text-align: center;
     }
 
-    /* ── DRIVER LIST ── */
+    /* ── DRIVERS BUTTON (sidebar) ── */
+    .btn-drivers-open {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: calc(100% - 32px);
+      margin: 14px 16px;
+      padding: 9px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text-secondary);
+      font-family: var(--font-display);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      cursor: pointer;
+    }
+    .btn-drivers-open:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(225,6,0,0.04);
+    }
+    .btn-drivers-open .btn-drivers-icon {
+      font-size: 0.85rem;
+      line-height: 1;
+    }
+
+    /* ── DRAWER OVERLAY ── */
+    .drawer-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.38);
+      z-index: 150;
+      backdrop-filter: blur(1px);
+    }
+    .drawer-overlay.open { display: block; }
+
+    /* ── DRAWER ── */
+    .drivers-drawer {
+      position: fixed;
+      top: 64px;               /* bajo el header */
+      left: 280px;             /* pegado al borde derecho del sidebar */
+      bottom: 0;
+      width: 260px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 160;
+      transform: translateX(-100%);
+      transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+      box-shadow: 4px 0 24px rgba(0,0,0,0.12);
+    }
+    .drivers-drawer.open { transform: translateX(0); }
+
+    /* ── DRIVER LIST (dentro del drawer) ── */
     .driver-list { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
 
     .list-header {
@@ -465,6 +526,20 @@
     }
 
     .header-actions { display: flex; gap: 6px; align-items: center; }
+
+    /* Botón X para cerrar el drawer */
+    .btn-drawer-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      line-height: 1;
+      padding: 2px 4px;
+      cursor: pointer;
+      transition: color 0.15s;
+      flex-shrink: 0;
+    }
+    .btn-drawer-close:hover { color: var(--accent); }
 
     .btn-sm {
       background: var(--bg-card);
@@ -852,6 +927,26 @@
 
   <!-- MAIN LAYOUT (hidden until data loads) -->
   <div id="main-layout" class="layout" style="display:none">
+    <!-- Drawer overlay -->
+    <div id="drawer-overlay" class="drawer-overlay"></div>
+
+    <!-- Drivers drawer -->
+    <div id="drivers-drawer" class="drivers-drawer" role="dialog" aria-label="Drivers panel" aria-modal="true">
+      <div class="driver-list">
+        <div class="list-header">
+          <span class="section-title">DRIVERS</span>
+          <div class="header-actions">
+            <button id="btn-show-all" class="btn-sm" title="Show all drivers">All</button>
+            <button id="btn-hide-all" class="btn-sm" title="Hide all drivers">None</button>
+            <button id="btn-battle" class="btn-battle" title="Toggle battle mode">⚔ BATTLE</button>
+            <button id="btn-drawer-close" class="btn-drawer-close" title="Close panel" aria-label="Close drivers panel">&#x2715;</button>
+          </div>
+        </div>
+        <div id="battle-hint" class="battle-hint" style="display:none"></div>
+        <ul id="drivers-ul" class="drivers-ul"></ul>
+      </div>
+    </div>
+
     <aside class="sidebar">
       <!-- Leaderboard -->
       <div class="leaderboard" id="leaderboard">
@@ -864,19 +959,11 @@
         </div>
       </div>
 
-      <!-- Driver List -->
-      <div class="driver-list">
-        <div class="list-header">
-          <span class="section-title">DRIVERS</span>
-          <div class="header-actions">
-            <button id="btn-show-all" class="btn-sm" title="Show all drivers">All</button>
-            <button id="btn-hide-all" class="btn-sm" title="Hide all drivers">None</button>
-            <button id="btn-battle" class="btn-battle" title="Toggle battle mode">⚔ BATTLE</button>
-          </div>
-        </div>
-        <div id="battle-hint" class="battle-hint" style="display:none"></div>
-        <ul id="drivers-ul" class="drivers-ul"></ul>
-      </div>
+      <!-- Botón para abrir drawer de pilotos -->
+      <button id="btn-drivers-open" class="btn-drivers-open" title="Open drivers panel">
+        <span class="btn-drivers-icon">&#x1F441;</span>
+        DRIVERS
+      </button>
     </aside>
 
     <!-- Chart Area -->
@@ -951,6 +1038,10 @@
   const elBtnBattle     = document.getElementById('btn-battle');
   const elBattleHint    = document.getElementById('battle-hint');
   const elDriversUl     = document.getElementById('drivers-ul');
+  const elDriversDrawer = document.getElementById('drivers-drawer');
+  const elDrawerOverlay = document.getElementById('drawer-overlay');
+  const elBtnDriversOpen= document.getElementById('btn-drivers-open');
+  const elBtnDrawerClose= document.getElementById('btn-drawer-close');
   const elChartTitle    = document.getElementById('chart-title');
   const elBattleTag     = document.getElementById('battle-tag');
   const elEmptyState    = document.getElementById('empty-state');
@@ -1629,6 +1720,29 @@
   });
   elLeaderboard.addEventListener('mouseleave', () => {
     hoverClearTimer = setTimeout(clearHoverState, 150);
+  });
+
+  // ── DRAWER ─────────────────────────────────────────────────────────────
+  function openDrawer() {
+    elDriversDrawer.classList.add('open');
+    elDrawerOverlay.classList.add('open');
+    elBtnDrawerClose.focus();
+  }
+
+  function closeDrawer() {
+    elDriversDrawer.classList.remove('open');
+    elDrawerOverlay.classList.remove('open');
+    elBtnDriversOpen.focus();
+  }
+
+  elBtnDriversOpen.addEventListener('click', openDrawer);
+  elBtnDrawerClose.addEventListener('click', closeDrawer);
+  elDrawerOverlay.addEventListener('click', closeDrawer);
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && elDriversDrawer.classList.contains('open')) {
+      closeDrawer();
+    }
   });
 
   // ── START ──────────────────────────────────────────────────────────────
