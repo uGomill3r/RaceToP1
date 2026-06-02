@@ -1056,8 +1056,21 @@
     return !hiddenDrivers.has(id);
   }
 
+  // Devuelve el id del piloto de batalla que va ganando en currentRace, o null si empate/sin datos
+  function getBattleLeader() {
+    if (!battleMode || battleDrivers.length !== 2 || currentRace === 0) return null;
+    const snap = seasonData.timeline[currentRace - 1];
+    if (!snap) return null;
+    const [a, b] = battleDrivers;
+    const ptsA = snap.standings[a] ?? 0;
+    const ptsB = snap.standings[b] ?? 0;
+    if (ptsA === ptsB) return null;
+    return ptsA > ptsB ? a : b;
+  }
+
   function buildDatasets() {
     const racesSlice = seasonData.timeline.slice(0, currentRace);
+    const battleLeader = getBattleLeader();
     return Object.entries(seasonData.drivers).map(([id, driver]) => {
       const visible = isDriverVisible(id);
       const isHighlighted = highlightedDriver === id;
@@ -1071,6 +1084,8 @@
       // Atenuar solo si hay highlight activo, no es el piloto destacado, y no es piloto de batalla
       if (visible && highlightedDriver && !isHighlighted && !isBattleSelected) opacity = 0.12;
       if (isHighlighted) { lineWidth = 3.5; pointRadius = 3; }
+      // El líder de la batalla actual lleva línea más gruesa (salvo que haya hover activo)
+      if (!highlightedDriver && battleLeader === id) { lineWidth = 3.5; pointRadius = 3; }
 
       const data = racesSlice.map(snap => snap.standings[id] ?? null);
       const rgba = a => hexToRgba(driver.color, a);
@@ -1174,6 +1189,7 @@
 
   function applyHighlightToChart() {
     if (!chart || !seasonData) return;
+    const battleLeader = getBattleLeader();
     chart.data.datasets.forEach(ds => {
       const id = ds.label;
       const driver = seasonData.drivers[id];
@@ -1189,6 +1205,8 @@
       // Atenuar solo si hay highlight activo, no es el piloto destacado, y no es piloto de batalla
       if (visible && highlightedDriver && !isHighlighted && !isBattleSelected) opacity = 0.12;
       if (isHighlighted) { lineWidth = 3.5; pointRadius = 3; }
+      // El líder de la batalla actual lleva línea más gruesa (salvo que haya hover activo)
+      if (!highlightedDriver && battleLeader === id) { lineWidth = 3.5; pointRadius = 3; }
 
       const rgba = a => hexToRgba(driver.color, a);
       ds.borderColor = rgba(opacity);
