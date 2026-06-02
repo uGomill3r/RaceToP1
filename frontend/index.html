@@ -310,6 +310,18 @@
     .race-tag { background: rgba(255,255,255,0.07); color: var(--text-secondary); }
     .final-tag { background: rgba(225,6,0,0.15); color: var(--accent); }
 
+    .lb-top10-label {
+      padding: 5px 16px 6px;
+      font-family: var(--font-display);
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      color: var(--text-muted);
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      text-transform: uppercase;
+    }
+
     .lb-empty {
       padding: 24px 16px;
       color: var(--text-muted);
@@ -972,6 +984,7 @@
           <span class="section-title">STANDINGS</span>
           <span id="race-tag"></span>
         </div>
+        <div class="lb-top10-label">TOP 10</div>
         <div id="lb-body">
           <div class="lb-empty">Press play to begin</div>
         </div>
@@ -1552,7 +1565,7 @@
     elLeaderboard?.classList.toggle('is-hover', isHover);
 
     // En hover muestra todos los pilotos; en estado normal limita a 5
-    const displayList = isHover ? standings : standings.slice(0, 5);
+    const displayList = isHover ? standings : standings.slice(0, 10);
 
     let html = `
       <div class="leader-spotlight">
@@ -1588,8 +1601,8 @@
       `;
     });
 
-    if (!isHover && standings.length > 5) {
-      html += `<li class="standings-more">+${standings.length - 5} more drivers</li>`;
+    if (!isHover && standings.length > 10) {
+      html += `<li class="standings-more">+${standings.length - 10} more drivers</li>`;
     }
 
     html += '</ol>';
