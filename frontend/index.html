@@ -402,6 +402,28 @@
       flex-shrink: 0;
     }
 
+    /* Indicador de carrera en hover del chart */
+    .lb-hover-badge {
+      font-family: var(--font-display);
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      padding: 2px 7px;
+      border-radius: 3px;
+      background: rgba(54,113,198,0.12);
+      color: #3671C6;
+      border: 1px solid rgba(54,113,198,0.25);
+      text-transform: uppercase;
+    }
+    .lb-hover-notice {
+      font-family: var(--font-display);
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      padding: 5px 16px 0;
+      text-transform: uppercase;
+    }
+
     .standings-more {
       padding: 6px 16px;
       font-size: 0.72rem;
@@ -614,62 +636,6 @@
     }
 
     .canvas-wrapper canvas { width: 100% !important; height: 100% !important; }
-
-    /* ── TOOLTIP EXTERNO ── */
-    #chart-tooltip {
-      position: absolute;
-      pointer-events: none;
-      z-index: 50;
-      background: #ffffff;
-      border: 1px solid #dde1e8;
-      border-radius: 6px;
-      padding: 8px 0 6px;
-      min-width: 160px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.10);
-      font-family: 'Barlow', sans-serif;
-      transition: opacity 0.15s;
-    }
-    #chart-tooltip.hidden { opacity: 0; }
-    .ct-title {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.15em;
-      color: #4a5568;
-      padding: 0 10px 6px;
-      border-bottom: 1px solid #eef0f4;
-      margin-bottom: 4px;
-      text-transform: uppercase;
-    }
-    .ct-row {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      padding: 3px 10px;
-      transition: background 0.1s;
-    }
-    .ct-row.ct-active {
-      background: rgba(0,0,0,0.04);
-    }
-    .ct-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-    .ct-code {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-weight: 700;
-      font-size: 0.78rem;
-      letter-spacing: 0.08em;
-      width: 28px;
-      flex-shrink: 0;
-    }
-    .ct-pts {
-      font-size: 0.82rem;
-      font-weight: 600;
-      margin-left: auto;
-      color: #0d1117;
-    }
 
     .empty-state {
       position: absolute;
@@ -905,7 +871,6 @@
         </div>
         <div class="canvas-wrapper">
           <canvas id="chart-canvas"></canvas>
-          <div id="chart-tooltip" class="hidden"></div>
           <div id="empty-state" class="empty-state">Move the slider to explore the season</div>
         </div>
       </div>
@@ -952,6 +917,7 @@
   let battleMode = false;
   let battleDrivers = [];
   let highlightedDriver = null;
+  let hoverSnap = null;
   let chart = null;
   let sortedDrivers = [];
 
@@ -1065,6 +1031,7 @@
     battleMode = false;
     battleDrivers = [];
     highlightedDriver = null;
+    hoverSnap = null;
 
     let res;
     try {
@@ -1215,48 +1182,7 @@
         interaction: { mode: 'index', intersect: false },
         plugins: {
           legend: { display: false },
-          tooltip: {
-            enabled: false,
-            external({ chart, tooltip }) {
-              const el = document.getElementById('chart-tooltip');
-              if (!el) return;
-              if (!tooltip.dataPoints?.length) { el.classList.add('hidden'); return; }
-
-              // Ordenar items por puntos descendente, filtrar ceros
-              const items = [...tooltip.dataPoints]
-                .filter(i => (i.raw ?? 0) > 0)
-                .sort((a, b) => (b.raw ?? 0) - (a.raw ?? 0));
-              if (!items.length) { el.classList.add('hidden'); return; }
-
-              const raceName = items[0].label ?? '';
-              let html = `<div class="ct-title">${raceName}</div>`;
-              items.forEach(item => {
-                const id = item.dataset.label;
-                const d = seasonData.drivers[id];
-                const color = d?.color ?? '#888';
-                const isActive = highlightedDriver === id;
-                html += `
-                  <div class="ct-row${isActive ? ' ct-active' : ''}">
-                    <span class="ct-dot" style="background:${color};box-shadow:0 0 6px ${color}80"></span>
-                    <span class="ct-code" style="color:${isActive ? color : ''}">${d?.code ?? id}</span>
-                    <span class="ct-pts">${item.raw} pts</span>
-                  </div>`;
-              });
-              el.innerHTML = html;
-              el.classList.remove('hidden');
-
-              // Posicionar relativo al canvas-wrapper
-              const wrapper = chart.canvas.parentNode;
-              const wRect = wrapper.getBoundingClientRect();
-              const cRect = chart.canvas.getBoundingClientRect();
-              let x = tooltip.caretX + (cRect.left - wRect.left) + 12;
-              let y = tooltip.caretY + (cRect.top  - wRect.top)  - el.offsetHeight / 2;
-              // Evitar que se salga por la derecha
-              if (x + el.offsetWidth > wrapper.offsetWidth - 8) x = tooltip.caretX + (cRect.left - wRect.left) - el.offsetWidth - 12;
-              el.style.left = x + 'px';
-              el.style.top  = Math.max(4, y) + 'px';
-            },
-          },
+          tooltip: { enabled: false },
         },
         scales: {
           x: {
@@ -1320,28 +1246,42 @@
     chart.update('none');
   }
 
-  // Hover sobre líneas del canvas — resalta el piloto más cercano al cursor
+  // Hover sobre líneas del canvas — resalta piloto y actualiza leaderboard con datos de esa carrera
   function attachCanvasHover() {
     if (!elChartCanvas) return;
     elChartCanvas.addEventListener('mousemove', e => {
-      if (!chart) return;
+      if (!chart || !seasonData) return;
       const points = chart.getElementsAtEventForMode(e, 'nearest', { intersect: false }, true);
       if (!points.length) return;
-      const ds = chart.data.datasets[points[0].datasetIndex];
+
+      const { datasetIndex, index: raceIndex } = points[0];
+      const ds = chart.data.datasets[datasetIndex];
       if (!ds) return;
       const id = ds.label;
-      if (highlightedDriver === id) return; // sin cambio, evitar re-render innecesario
+
+      // Actualizar hoverSnap con la carrera bajo el cursor
+      const snap = seasonData.timeline[raceIndex];
+      const newSnap = snap ? { raceIndex, raceName: snap.name } : null;
+      const snapChanged = newSnap?.raceIndex !== hoverSnap?.raceIndex;
+
+      const driverChanged = highlightedDriver !== id;
+      if (!driverChanged && !snapChanged) return; // sin cambio, evitar re-render innecesario
+
       highlightedDriver = id;
+      hoverSnap = newSnap;
       applyHighlightToChart();
       updateDriverHighlight();
+      updateLeaderboard();
     });
 
     elChartCanvas.addEventListener('mouseleave', () => {
-      document.getElementById('chart-tooltip')?.classList.add('hidden');
-      if (!highlightedDriver) return;
+      const hadState = highlightedDriver || hoverSnap;
       highlightedDriver = null;
+      hoverSnap = null;
+      if (!hadState) return;
       applyHighlightToChart();
       updateDriverHighlight();
+      updateLeaderboard();
     });
   }
 
@@ -1369,12 +1309,32 @@
       .sort((a, b) => b.pts - a.pts);
   }
 
-  function updateLeaderboard() {
-    const standings = getCurrentStandings();
-    const total = seasonData?.totalRaces ?? 0;
+  function getStandingsFromSnap(snapIndex) {
+    if (!seasonData || snapIndex < 0) return [];
+    const snap = seasonData.timeline[snapIndex];
+    if (!snap) return [];
+    return Object.entries(snap.standings)
+      .map(([id, pts]) => ({
+        id, pts,
+        name: seasonData.drivers[id]?.name ?? id,
+        color: seasonData.drivers[id]?.color ?? '#888',
+      }))
+      .filter(d => d.pts > 0)
+      .sort((a, b) => b.pts - a.pts);
+  }
 
-    // Race tag
-    if (currentRace === 0) {
+  function updateLeaderboard() {
+    const total = seasonData?.totalRaces ?? 0;
+    const isHover = hoverSnap !== null;
+    // En hover usa la carrera del cursor; si no, la del slider
+    const snapIndex = isHover ? hoverSnap.raceIndex : currentRace - 1;
+    const standings = getStandingsFromSnap(snapIndex);
+
+    // Race tag: en hover muestra badge diferenciado
+    if (isHover) {
+      elRaceTag.textContent = `R${hoverSnap.raceIndex + 1}`;
+      elRaceTag.className = 'lb-hover-badge';
+    } else if (currentRace === 0) {
       elRaceTag.textContent = '';
       elRaceTag.className = '';
     } else if (currentRace < total) {
@@ -1403,17 +1363,23 @@
           <span class="pts-label">PTS</span>
         </div>
       </div>
-      <ol class="standings-list">
     `;
+
+    if (isHover) {
+      html += `<div class="lb-hover-notice">— ${hoverSnap.raceName}</div>`;
+    }
+
+    html += '<ol class="standings-list">';
 
     topFive.forEach((d, i) => {
       const gap = leaderPts - d.pts;
       const lastName = d.name.split(' ').pop();
+      const isHighlightedRow = highlightedDriver === d.id;
       html += `
-        <li class="standing-row ${i === 0 ? 'leader' : ''}">
+        <li class="standing-row ${i === 0 ? 'leader' : ''}" style="${isHighlightedRow ? `background:${d.color}18;` : ''}">
           <span class="pos">${i + 1}</span>
           <span class="indicator" style="background:${d.color};box-shadow:0 0 6px ${d.color}80"></span>
-          <span class="s-name">${lastName}</span>
+          <span class="s-name" style="${isHighlightedRow ? `color:${d.color};font-weight:700;` : ''}">${lastName}</span>
           <span class="s-pts">${d.pts}</span>
           ${i > 0 && gap > 0 ? `<span class="s-gap">–${gap}</span>` : ''}
         </li>
