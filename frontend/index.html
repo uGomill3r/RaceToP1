@@ -1396,15 +1396,23 @@
 
       // Etiqueta con el número de carrera
       const label = `R${hoverSnap.raceIndex + 1}`;
-      ctx.font = "700 10px 'Barlow Condensed', sans-serif";
+      ctx.font = "700 11px 'Barlow Condensed', sans-serif";
       ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
       const tw = ctx.measureText(label).width;
-      const px = Math.min(Math.max(x, xAxis.left + tw / 2 + 4), xAxis.right - tw / 2 - 4);
-      const py = yAxis.top - 6;
-      ctx.fillStyle = 'rgba(225,6,0,0.85)';
-      ctx.fillRect(px - tw / 2 - 4, py - 10, tw + 8, 14);
+      const badgeH = 16;  // altura del badge
+      const badgeW = tw + 10;
+      // Posicionar el badge completamente dentro del área del chart (yAxis.top + margen)
+      const badgeTop = yAxis.top + 4;
+      const px = Math.min(Math.max(x, xAxis.left + badgeW / 2 + 2), xAxis.right - badgeW / 2 - 2);
+      const badgeCenterY = badgeTop + badgeH / 2;
+      // Fondo del badge con bordes redondeados simulados via rect simple
+      ctx.fillStyle = 'rgba(225,6,0,0.90)';
+      ctx.beginPath();
+      ctx.roundRect(px - badgeW / 2, badgeTop, badgeW, badgeH, 3);
+      ctx.fill();
       ctx.fillStyle = '#fff';
-      ctx.fillText(label, px, py);
+      ctx.fillText(label, px, badgeCenterY);
       ctx.restore();
     },
   };
