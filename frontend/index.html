@@ -1083,9 +1083,8 @@
 
       // Atenuar solo si hay highlight activo, no es el piloto destacado, y no es piloto de batalla
       if (visible && highlightedDriver && !isHighlighted && !isBattleSelected) opacity = 0.12;
-      if (isHighlighted) { lineWidth = 3.5; pointRadius = 3; }
-      // El líder de la batalla actual lleva línea más gruesa (salvo que haya hover activo)
-      if (!highlightedDriver && battleLeader === id) { lineWidth = 3.5; pointRadius = 3; }
+      // El líder de la batalla actual lleva línea más gruesa; el hover usa glow en lugar de grosor
+      if (battleLeader === id) { lineWidth = 3.5; pointRadius = 3; }
 
       const data = racesSlice.map(snap => snap.standings[id] ?? null);
       const rgba = a => hexToRgba(driver.color, a);
@@ -1113,6 +1112,29 @@
       .slice(0, currentRace)
       .map(r => r.name.replace(' Grand Prix', '').replace(' Grand', ''));
   }
+
+  // Plugin: glow en la línea del piloto hovereado usando shadowBlur del canvas
+  const glowLinePlugin = {
+    id: 'glowLine',
+    beforeDatasetDraw(chart, args) {
+      if (!highlightedDriver) return;
+      const ds = chart.data.datasets[args.index];
+      if (!ds || ds.label !== highlightedDriver) return;
+      const driver = seasonData?.drivers[ds.label];
+      if (!driver) return;
+      const ctx = chart.ctx;
+      ctx.save();
+      ctx.shadowBlur  = 18;
+      ctx.shadowColor = driver.color;
+    },
+    afterDatasetDraw(chart, args) {
+      if (!highlightedDriver) return;
+      const ds = chart.data.datasets[args.index];
+      if (!ds || ds.label !== highlightedDriver) return;
+      chart.ctx.restore();
+    },
+  };
+  Chart.register(glowLinePlugin);
 
   function initChart() {
     if (chart) { chart.destroy(); chart = null; }
@@ -1204,9 +1226,8 @@
 
       // Atenuar solo si hay highlight activo, no es el piloto destacado, y no es piloto de batalla
       if (visible && highlightedDriver && !isHighlighted && !isBattleSelected) opacity = 0.12;
-      if (isHighlighted) { lineWidth = 3.5; pointRadius = 3; }
-      // El líder de la batalla actual lleva línea más gruesa (salvo que haya hover activo)
-      if (!highlightedDriver && battleLeader === id) { lineWidth = 3.5; pointRadius = 3; }
+      // El líder de la batalla actual lleva línea más gruesa; el hover usa glow en lugar de grosor
+      if (battleLeader === id) { lineWidth = 3.5; pointRadius = 3; }
 
       const rgba = a => hexToRgba(driver.color, a);
       ds.borderColor = rgba(opacity);
