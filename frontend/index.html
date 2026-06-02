@@ -332,6 +332,24 @@
     }
     .btn-race-nav:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
     .btn-race-nav:disabled { opacity: 0.25; cursor: not-allowed; }
+
+    .btn-race-clear {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 3px;
+      padding: 0;
+      margin-left: 2px;
+      transition: color 0.15s;
+      cursor: pointer;
+    }
+    .btn-race-clear:hover { color: var(--accent); }
     .final-tag { background: rgba(225,6,0,0.15); color: var(--accent); }
 
     .lb-top10-label {
@@ -1010,6 +1028,7 @@
             <button id="btn-race-prev" class="btn-race-nav" title="Previous race">&#x25C0;</button>
             <span id="race-tag"></span>
             <button id="btn-race-next" class="btn-race-nav" title="Next race">&#x25B6;</button>
+            <button id="btn-race-clear" class="btn-race-clear" title="Clear selection">&#x2715;</button>
           </div>
           <span id="race-tag-plain"></span>
         </div>
@@ -1105,6 +1124,7 @@
   const elRaceNav       = document.getElementById('race-nav');
   const elBtnRacePrev   = document.getElementById('btn-race-prev');
   const elBtnRaceNext   = document.getElementById('btn-race-next');
+  const elBtnRaceClear  = document.getElementById('btn-race-clear');
   // Sidebar driver controls
   const elBtnShowAll    = document.getElementById('btn-show-all');
   const elBtnHideAll    = document.getElementById('btn-hide-all');
@@ -1352,10 +1372,48 @@
   };
   Chart.register(glowLinePlugin);
 
+  // Plugin inline: línea vertical en la carrera seleccionada (lock)
+  const raceLinePlugin = {
+    id: 'raceLine',
+    afterDraw(chart) {
+      if (!hoverSnap) return;
+      const ctx = chart.ctx;
+      const xAxis = chart.scales.x;
+      const yAxis = chart.scales.y;
+      const x = xAxis.getPixelForValue(hoverSnap.raceIndex);
+      if (x === undefined || isNaN(x)) return;
+
+      ctx.save();
+      // Línea vertical
+      ctx.beginPath();
+      ctx.moveTo(x, yAxis.top);
+      ctx.lineTo(x, yAxis.bottom);
+      ctx.strokeStyle = 'rgba(225,6,0,0.55)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 3]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Etiqueta con el número de carrera
+      const label = `R${hoverSnap.raceIndex + 1}`;
+      ctx.font = "700 10px 'Barlow Condensed', sans-serif";
+      ctx.textAlign = 'center';
+      const tw = ctx.measureText(label).width;
+      const px = Math.min(Math.max(x, xAxis.left + tw / 2 + 4), xAxis.right - tw / 2 - 4);
+      const py = yAxis.top - 6;
+      ctx.fillStyle = 'rgba(225,6,0,0.85)';
+      ctx.fillRect(px - tw / 2 - 4, py - 10, tw + 8, 14);
+      ctx.fillStyle = '#fff';
+      ctx.fillText(label, px, py);
+      ctx.restore();
+    },
+  };
+
   function initChart() {
     if (chart) { chart.destroy(); chart = null; }
 
     chart = new Chart(elChartCanvas, {
+      plugins: [raceLinePlugin],
       type: 'line',
       data: {
         labels: getRaceLabels(),
@@ -1963,6 +2021,7 @@
 
   elBtnRacePrev.addEventListener('click', e => { e.stopPropagation(); navigateRace(-1); });
   elBtnRaceNext.addEventListener('click', e => { e.stopPropagation(); navigateRace(+1); });
+  elBtnRaceClear.addEventListener('click', e => { e.stopPropagation(); clearHoverState(); });
 
   // Clic fuera del canvas y fuera del sidebar → limpiar lock
   document.addEventListener('click', e => {
