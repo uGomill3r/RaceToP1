@@ -1045,6 +1045,7 @@
   let battleMode = false;
   let battleDrivers = [];
   let highlightedDriver = null;
+  let lockedDriver = null;       // fijado por clic; inhibe el hover libre
   let hoverSnap = null;
   let hoverClearTimer = null;
   let chart = null;
@@ -1385,7 +1386,8 @@
   }
 
   function clearHoverState() {
-    const hadState = highlightedDriver || hoverSnap;
+    const hadState = lockedDriver || highlightedDriver || hoverSnap;
+    lockedDriver = null;
     highlightedDriver = null;
     hoverSnap = null;
     if (!hadState) return;
@@ -1394,27 +1396,34 @@
     updateLeaderboard();
   }
 
-  // Hover sobre líneas del canvas — resalta piloto y actualiza leaderboard con datos de esa carrera
+  // Hover/click sobre líneas del canvas
   function attachCanvasHover() {
     if (!elChartCanvas) return;
+
     elChartCanvas.addEventListener('mousemove', e => {
-      if (hoverClearTimer) { clearTimeout(hoverClearTimer); hoverClearTimer = null; }
+      if (lockedDriver) return;           // hay un lock activo: ignorar hover libre
       if (!chart || !seasonData) return;
       const points = chart.getElementsAtEventForMode(e, 'nearest', { intersect: false }, true);
-      if (!points.length) return;
+      if (!points.length) {
+        // fuera de cualquier curva: limpiar hover flotante
+        if (highlightedDriver || hoverSnap) {
+          highlightedDriver = null;
+          hoverSnap = null;
+          applyHighlightToChart();
+          updateDriverHighlight();
+          updateLeaderboard();
+        }
+        return;
+      }
 
       const { datasetIndex, index: raceIndex } = points[0];
       const ds = chart.data.datasets[datasetIndex];
       if (!ds) return;
       const id = ds.label;
-
-      // Actualizar hoverSnap con la carrera bajo el cursor
       const snap = seasonData.timeline[raceIndex];
       const newSnap = snap ? { raceIndex, raceName: snap.name } : null;
-      const snapChanged = newSnap?.raceIndex !== hoverSnap?.raceIndex;
 
-      const driverChanged = highlightedDriver !== id;
-      if (!driverChanged && !snapChanged) return; // sin cambio, evitar re-render innecesario
+      if (highlightedDriver === id && newSnap?.raceIndex === hoverSnap?.raceIndex) return;
 
       highlightedDriver = id;
       hoverSnap = newSnap;
@@ -1424,13 +1433,50 @@
     });
 
     elChartCanvas.addEventListener('mouseleave', () => {
-      // No limpiar al salir del canvas: el estado queda congelado
-      // para que el usuario pueda scrollear el leaderboard sin perderlo.
-      // Se limpia solo al hacer clic en el canvas o cargar nueva temporada.
+      if (lockedDriver) return;           // estado fijo: no limpiar al salir
+      if (highlightedDriver || hoverSnap) {
+        highlightedDriver = null;
+        hoverSnap = null;
+        applyHighlightToChart();
+        updateDriverHighlight();
+        updateLeaderboard();
+      }
     });
 
-    elChartCanvas.addEventListener('click', () => {
-      clearHoverState();
+    elChartCanvas.addEventListener('click', e => {
+      if (!chart || !seasonData) return;
+      const points = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
+
+      if (points.length) {
+        // Clic sobre una curva: fijar ese piloto+carrera
+        const { datasetIndex, index: raceIndex } = points[0];
+        const ds = chart.data.datasets[datasetIndex];
+        if (!ds) return;
+        const id = ds.label;
+        const snap = seasonData.timeline[raceIndex];
+
+        // Si ya estaba fijado el mismo punto, desfijar
+        if (lockedDriver === id && hoverSnap?.raceIndex === raceIndex) {
+          lockedDriver = null;
+          highlightedDriver = null;
+          hoverSnap = null;
+        } else {
+          lockedDriver = id;
+          highlightedDriver = id;
+          hoverSnap = snap ? { raceIndex, raceName: snap.name } : null;
+        }
+        applyHighlightToChart();
+        updateDriverHighlight();
+        updateLeaderboard();
+      } else {
+        // Clic en zona vacía del canvas: limpiar lock
+        lockedDriver = null;
+        highlightedDriver = null;
+        hoverSnap = null;
+        applyHighlightToChart();
+        updateDriverHighlight();
+        updateLeaderboard();
+      }
     });
   }
 
@@ -1583,9 +1629,42 @@
         <span class="team-name">${driver.team}</span>
       `;
 
-      li.querySelector('.driver-btn').addEventListener('click', () => toggleDriver(driver.id));
-      li.addEventListener('mouseenter', () => { highlightedDriver = driver.id; applyHighlightToChart(); updateDriverHighlight(); });
-      li.addEventListener('mouseleave', () => { highlightedDriver = null; applyHighlightToChart(); updateDriverHighlight(); });
+      // Clic en el botón del piloto: si hay lock activo en ese piloto → desfijar;
+      // si no hay lock → comportamiento normal (toggle visibilidad / battle)
+      li.querySelector('.driver-btn').addEventListener('click', () => {
+        if (lockedDriver === driver.id) {
+          // Desfijar
+          lockedDriver = null;
+          highlightedDriver = null;
+          hoverSnap = null;
+          applyHighlightToChart();
+          updateDriverHighlight();
+          updateLeaderboard();
+        } else if (lockedDriver) {
+          // Fijar este piloto (sin carrera concreta)
+          lockedDriver = driver.id;
+          highlightedDriver = driver.id;
+          hoverSnap = null;
+          applyHighlightToChart();
+          updateDriverHighlight();
+          updateLeaderboard();
+        } else {
+          toggleDriver(driver.id);
+        }
+      });
+      // Hover en lista solo actúa si no hay lock
+      li.addEventListener('mouseenter', () => {
+        if (lockedDriver) return;
+        highlightedDriver = driver.id;
+        applyHighlightToChart();
+        updateDriverHighlight();
+      });
+      li.addEventListener('mouseleave', () => {
+        if (lockedDriver) return;
+        highlightedDriver = null;
+        applyHighlightToChart();
+        updateDriverHighlight();
+      });
 
       elDriversUl.appendChild(li);
     });
@@ -1783,6 +1862,15 @@
   elBtnShowAllD.addEventListener('click', showAll);
   elBtnHideAllD.addEventListener('click', hideAll);
   elBtnBattleD.addEventListener('click', toggleBattleMode);
+
+  // Clic fuera del canvas y fuera del sidebar → limpiar lock
+  document.addEventListener('click', e => {
+    if (!lockedDriver) return;
+    const inCanvas  = elChartCanvas.contains(e.target);
+    const inSidebar = document.querySelector('.sidebar').contains(e.target);
+    const inDrawer  = elDriversDrawer.contains(e.target);
+    if (!inCanvas && !inSidebar && !inDrawer) clearHoverState();
+  }, true);
 
   // ── START ──────────────────────────────────────────────────────────────
   attachCanvasHover();
