@@ -1113,14 +1113,16 @@
       .map(r => r.name.replace(' Grand Prix', '').replace(' Grand', ''));
   }
 
-  // Plugin: glow en la línea del piloto hovereado usando shadowBlur del canvas
+  // Plugin: glow en la línea activa — hover tiene prioridad, si no, líder de batalla
   const glowLinePlugin = {
     id: 'glowLine',
     beforeDatasetDraw(chart, args) {
-      if (!highlightedDriver) return;
       const ds = chart.data.datasets[args.index];
-      if (!ds || ds.label !== highlightedDriver) return;
-      const driver = seasonData?.drivers[ds.label];
+      if (!ds) return;
+      const id = ds.label;
+      const glowTarget = highlightedDriver ?? getBattleLeader();
+      if (!glowTarget || id !== glowTarget) return;
+      const driver = seasonData?.drivers[id];
       if (!driver) return;
       const ctx = chart.ctx;
       ctx.save();
@@ -1128,9 +1130,11 @@
       ctx.shadowColor = driver.color;
     },
     afterDatasetDraw(chart, args) {
-      if (!highlightedDriver) return;
       const ds = chart.data.datasets[args.index];
-      if (!ds || ds.label !== highlightedDriver) return;
+      if (!ds) return;
+      const id = ds.label;
+      const glowTarget = highlightedDriver ?? getBattleLeader();
+      if (!glowTarget || id !== glowTarget) return;
       chart.ctx.restore();
     },
   };
