@@ -1061,13 +1061,15 @@
     return Object.entries(seasonData.drivers).map(([id, driver]) => {
       const visible = isDriverVisible(id);
       const isHighlighted = highlightedDriver === id;
+      // En modo batalla, los pilotos seleccionados nunca se atenúan
       const isBattleSelected = battleMode && battleDrivers.includes(id);
 
       let opacity = visible ? 1 : 0;
       let lineWidth = 2;
       let pointRadius = 2;
 
-      if (visible && highlightedDriver && !isHighlighted) opacity = 0.12;
+      // Atenuar solo si hay highlight activo, no es el piloto destacado, y no es piloto de batalla
+      if (visible && highlightedDriver && !isHighlighted && !isBattleSelected) opacity = 0.12;
       if (isHighlighted) { lineWidth = 3.5; pointRadius = 3; }
 
       const data = racesSlice.map(snap => snap.standings[id] ?? null);
@@ -1177,16 +1179,50 @@
       const driver = seasonData.drivers[id];
       if (!driver) return;
       const visible = isDriverVisible(id);
-      let opacity = visible ? 1 : 0;
+      const isHighlighted = highlightedDriver === id;
       const isBattleSelected = battleMode && battleDrivers.includes(id);
-      if (visible && highlightedDriver && highlightedDriver !== id && !isBattleSelected) opacity = 0.12;
+
+      let opacity = visible ? 1 : 0;
+      let lineWidth = 2;
+      let pointRadius = 2;
+
+      // Atenuar solo si hay highlight activo, no es el piloto destacado, y no es piloto de batalla
+      if (visible && highlightedDriver && !isHighlighted && !isBattleSelected) opacity = 0.12;
+      if (isHighlighted) { lineWidth = 3.5; pointRadius = 3; }
+
       const rgba = a => hexToRgba(driver.color, a);
       ds.borderColor = rgba(opacity);
       ds.backgroundColor = rgba(opacity * 0.08);
+      ds.borderWidth = lineWidth;
+      ds.pointRadius = pointRadius;
       ds.pointBackgroundColor = rgba(opacity);
       ds.pointBorderColor = rgba(opacity);
     });
     chart.update('none');
+  }
+
+  // Hover sobre líneas del canvas — resalta el piloto más cercano al cursor
+  function attachCanvasHover() {
+    if (!elChartCanvas) return;
+    elChartCanvas.addEventListener('mousemove', e => {
+      if (!chart) return;
+      const points = chart.getElementsAtEventForMode(e, 'nearest', { intersect: false }, true);
+      if (!points.length) return;
+      const ds = chart.data.datasets[points[0].datasetIndex];
+      if (!ds) return;
+      const id = ds.label;
+      if (highlightedDriver === id) return; // sin cambio, evitar re-render innecesario
+      highlightedDriver = id;
+      applyHighlightToChart();
+      updateDriverHighlight();
+    });
+
+    elChartCanvas.addEventListener('mouseleave', () => {
+      if (!highlightedDriver) return;
+      highlightedDriver = null;
+      applyHighlightToChart();
+      updateDriverHighlight();
+    });
   }
 
   function updateChart() {
@@ -1473,6 +1509,7 @@
   });
 
   // ── START ──────────────────────────────────────────────────────────────
+  attachCanvasHover();
   init();
 </script>
 </body>
