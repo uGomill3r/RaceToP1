@@ -1424,8 +1424,13 @@
     });
 
     elChartCanvas.addEventListener('mouseleave', () => {
-      // Delay para permitir mover el cursor al leaderboard sin que se cierre
-      hoverClearTimer = setTimeout(clearHoverState, 300);
+      // No limpiar al salir del canvas: el estado queda congelado
+      // para que el usuario pueda scrollear el leaderboard sin perderlo.
+      // Se limpia solo al hacer clic en el canvas o cargar nueva temporada.
+    });
+
+    elChartCanvas.addEventListener('click', () => {
+      clearHoverState();
     });
   }
 
@@ -1745,13 +1750,7 @@
     });
   });
 
-  // Mantener el estado hover mientras el cursor está sobre el leaderboard
-  elLeaderboard.addEventListener('mouseenter', () => {
-    if (hoverClearTimer) { clearTimeout(hoverClearTimer); hoverClearTimer = null; }
-  });
-  elLeaderboard.addEventListener('mouseleave', () => {
-    hoverClearTimer = setTimeout(clearHoverState, 150);
-  });
+  // El estado hover se limpia solo con clic en el canvas o al cargar temporada.
 
   // ── DRAWER ─────────────────────────────────────────────────────────────
   function openDrawer() {
