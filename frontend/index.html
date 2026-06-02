@@ -219,7 +219,7 @@
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      overflow-y: auto;
+      overflow: hidden;
       height: calc(100vh - 64px);
       position: sticky;
       top: 64px;
@@ -263,7 +263,24 @@
     }
 
     /* ── LEADERBOARD ── */
-    .leaderboard { border-bottom: 1px solid var(--border); }
+    .leaderboard {
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;         /* tamaño natural en estado normal */
+      min-height: 0;
+    }
+    .leaderboard.is-hover {
+      flex: 1;                /* ocupa el espacio restante en hover */
+      overflow: hidden;
+    }
+    #lb-body {
+      overflow-y: auto;
+    }
+    .leaderboard.is-hover #lb-body {
+      flex: 1;
+      overflow-y: auto;
+    }
 
     .lb-header {
       display: flex;
@@ -837,7 +854,7 @@
   <div id="main-layout" class="layout" style="display:none">
     <aside class="sidebar">
       <!-- Leaderboard -->
-      <div class="leaderboard">
+      <div class="leaderboard" id="leaderboard">
         <div class="lb-header">
           <span class="section-title">STANDINGS</span>
           <span id="race-tag"></span>
@@ -918,6 +935,7 @@
   let battleDrivers = [];
   let highlightedDriver = null;
   let hoverSnap = null;
+  let hoverClearTimer = null;
   let chart = null;
   let sortedDrivers = [];
 
@@ -926,6 +944,7 @@
   const elLoadingState  = document.getElementById('loading-state');
   const elMainLayout    = document.getElementById('main-layout');
   const elLbBody        = document.getElementById('lb-body');
+  const elLeaderboard   = document.getElementById('leaderboard');
   const elRaceTag       = document.getElementById('race-tag');
   const elBtnShowAll    = document.getElementById('btn-show-all');
   const elBtnHideAll    = document.getElementById('btn-hide-all');
@@ -1246,10 +1265,21 @@
     chart.update('none');
   }
 
+  function clearHoverState() {
+    const hadState = highlightedDriver || hoverSnap;
+    highlightedDriver = null;
+    hoverSnap = null;
+    if (!hadState) return;
+    applyHighlightToChart();
+    updateDriverHighlight();
+    updateLeaderboard();
+  }
+
   // Hover sobre líneas del canvas — resalta piloto y actualiza leaderboard con datos de esa carrera
   function attachCanvasHover() {
     if (!elChartCanvas) return;
     elChartCanvas.addEventListener('mousemove', e => {
+      if (hoverClearTimer) { clearTimeout(hoverClearTimer); hoverClearTimer = null; }
       if (!chart || !seasonData) return;
       const points = chart.getElementsAtEventForMode(e, 'nearest', { intersect: false }, true);
       if (!points.length) return;
@@ -1275,13 +1305,8 @@
     });
 
     elChartCanvas.addEventListener('mouseleave', () => {
-      const hadState = highlightedDriver || hoverSnap;
-      highlightedDriver = null;
-      hoverSnap = null;
-      if (!hadState) return;
-      applyHighlightToChart();
-      updateDriverHighlight();
-      updateLeaderboard();
+      // Delay para permitir mover el cursor al leaderboard sin que se cierre
+      hoverClearTimer = setTimeout(clearHoverState, 300);
     });
   }
 
@@ -1352,7 +1377,11 @@
 
     const leader = standings[0];
     const leaderPts = leader.pts;
-    const topFive = standings.slice(0, 5);
+    // Activar clase is-hover en el contenedor para expandir con scroll
+    elLeaderboard?.classList.toggle('is-hover', isHover);
+
+    // En hover muestra todos los pilotos; en estado normal limita a 5
+    const displayList = isHover ? standings : standings.slice(0, 5);
 
     let html = `
       <div class="leader-spotlight">
@@ -1371,7 +1400,7 @@
 
     html += '<ol class="standings-list">';
 
-    topFive.forEach((d, i) => {
+    displayList.forEach((d, i) => {
       const gap = leaderPts - d.pts;
       const lastName = d.name.split(' ').pop();
       const isHighlightedRow = highlightedDriver === d.id;
@@ -1386,7 +1415,7 @@
       `;
     });
 
-    if (standings.length > 5) {
+    if (!isHover && standings.length > 5) {
       html += `<li class="standings-more">+${standings.length - 5} more drivers</li>`;
     }
 
@@ -1592,6 +1621,14 @@
       btn.classList.add('active');
       if (isPlaying) { stopPlayback(); startPlayback(); }
     });
+  });
+
+  // Mantener el estado hover mientras el cursor está sobre el leaderboard
+  elLeaderboard.addEventListener('mouseenter', () => {
+    if (hoverClearTimer) { clearTimeout(hoverClearTimer); hoverClearTimer = null; }
+  });
+  elLeaderboard.addEventListener('mouseleave', () => {
+    hoverClearTimer = setTimeout(clearHoverState, 150);
   });
 
   // ── START ──────────────────────────────────────────────────────────────
