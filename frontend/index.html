@@ -615,6 +615,62 @@
 
     .canvas-wrapper canvas { width: 100% !important; height: 100% !important; }
 
+    /* ── TOOLTIP EXTERNO ── */
+    #chart-tooltip {
+      position: absolute;
+      pointer-events: none;
+      z-index: 50;
+      background: #ffffff;
+      border: 1px solid #dde1e8;
+      border-radius: 6px;
+      padding: 8px 0 6px;
+      min-width: 160px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+      font-family: 'Barlow', sans-serif;
+      transition: opacity 0.15s;
+    }
+    #chart-tooltip.hidden { opacity: 0; }
+    .ct-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      color: #4a5568;
+      padding: 0 10px 6px;
+      border-bottom: 1px solid #eef0f4;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+    .ct-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 3px 10px;
+      transition: background 0.1s;
+    }
+    .ct-row.ct-active {
+      background: rgba(0,0,0,0.04);
+    }
+    .ct-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .ct-code {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      width: 28px;
+      flex-shrink: 0;
+    }
+    .ct-pts {
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-left: auto;
+      color: #0d1117;
+    }
+
     .empty-state {
       position: absolute;
       inset: 0;
@@ -849,6 +905,7 @@
         </div>
         <div class="canvas-wrapper">
           <canvas id="chart-canvas"></canvas>
+          <div id="chart-tooltip" class="hidden"></div>
           <div id="empty-state" class="empty-state">Move the slider to explore the season</div>
         </div>
       </div>
@@ -1022,9 +1079,11 @@
     currentRace = seasonData.totalRaces;
 
     // Sort drivers by team then name
+    // Ordenar por puntos totales al final del campeonato (último snapshot)
+    const finalSnap = seasonData.timeline[seasonData.totalRaces - 1]?.standings ?? {};
     sortedDrivers = Object.entries(seasonData.drivers)
-      .map(([id, d]) => ({ id, ...d }))
-      .sort((a, b) => a.team.localeCompare(b.team) || a.name.localeCompare(b.name));
+      .map(([id, d]) => ({ id, ...d, finalPts: finalSnap[id] ?? 0 }))
+      .sort((a, b) => b.finalPts - a.finalPts || a.name.localeCompare(b.name));
 
     // Setup scrubber
     elScrubber.max = seasonData.totalRaces;
@@ -1157,28 +1216,45 @@
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#ffffff',
-            borderColor: '#dde1e8',
-            borderWidth: 1,
-            titleColor: '#4a5568',
-            bodyColor: '#0d1117',
-            titleFont: { family: "'Barlow Condensed', sans-serif", size: 11, weight: '600' },
-            bodyFont: { family: "'Barlow', sans-serif", size: 12 },
-            padding: 10,
-            itemSort: (a, b) => (b.raw ?? 0) - (a.raw ?? 0),
-            filter: item => (item.raw ?? 0) > 0,
-            callbacks: {
-              title: items => items[0]?.label ?? '',
-              label: item => {
+            enabled: false,
+            external({ chart, tooltip }) {
+              const el = document.getElementById('chart-tooltip');
+              if (!el) return;
+              if (!tooltip.dataPoints?.length) { el.classList.add('hidden'); return; }
+
+              // Ordenar items por puntos descendente, filtrar ceros
+              const items = [...tooltip.dataPoints]
+                .filter(i => (i.raw ?? 0) > 0)
+                .sort((a, b) => (b.raw ?? 0) - (a.raw ?? 0));
+              if (!items.length) { el.classList.add('hidden'); return; }
+
+              const raceName = items[0].label ?? '';
+              let html = `<div class="ct-title">${raceName}</div>`;
+              items.forEach(item => {
                 const id = item.dataset.label;
                 const d = seasonData.drivers[id];
-                return ` ${d?.code ?? id}  ${item.raw ?? 0} pts`;
-              },
-              labelColor: item => {
-                const id = item.dataset.label;
-                const color = seasonData.drivers[id]?.color ?? '#888';
-                return { borderColor: color, backgroundColor: color };
-              },
+                const color = d?.color ?? '#888';
+                const isActive = highlightedDriver === id;
+                html += `
+                  <div class="ct-row${isActive ? ' ct-active' : ''}">
+                    <span class="ct-dot" style="background:${color};box-shadow:0 0 6px ${color}80"></span>
+                    <span class="ct-code" style="color:${isActive ? color : ''}">${d?.code ?? id}</span>
+                    <span class="ct-pts">${item.raw} pts</span>
+                  </div>`;
+              });
+              el.innerHTML = html;
+              el.classList.remove('hidden');
+
+              // Posicionar relativo al canvas-wrapper
+              const wrapper = chart.canvas.parentNode;
+              const wRect = wrapper.getBoundingClientRect();
+              const cRect = chart.canvas.getBoundingClientRect();
+              let x = tooltip.caretX + (cRect.left - wRect.left) + 12;
+              let y = tooltip.caretY + (cRect.top  - wRect.top)  - el.offsetHeight / 2;
+              // Evitar que se salga por la derecha
+              if (x + el.offsetWidth > wrapper.offsetWidth - 8) x = tooltip.caretX + (cRect.left - wRect.left) - el.offsetWidth - 12;
+              el.style.left = x + 'px';
+              el.style.top  = Math.max(4, y) + 'px';
             },
           },
         },
@@ -1261,6 +1337,7 @@
     });
 
     elChartCanvas.addEventListener('mouseleave', () => {
+      document.getElementById('chart-tooltip')?.classList.add('hidden');
       if (!highlightedDriver) return;
       highlightedDriver = null;
       applyHighlightToChart();
