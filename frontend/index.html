@@ -1629,28 +1629,29 @@
         <span class="team-name">${driver.team}</span>
       `;
 
-      // Clic en el botón del piloto: si hay lock activo en ese piloto → desfijar;
-      // si no hay lock → comportamiento normal (toggle visibilidad / battle)
+      // Clic en el nombre del piloto: fijar/desfijar resaltado de curva.
+      // La visibilidad (toggle) se maneja con un botón separado si se necesita;
+      // aquí el clic siempre actúa como lock de selección.
       li.querySelector('.driver-btn').addEventListener('click', () => {
+        if (battleMode) {
+          // En battle mode el clic sigue seleccionando para la batalla
+          toggleDriver(driver.id);
+          return;
+        }
         if (lockedDriver === driver.id) {
-          // Desfijar
+          // Mismo piloto: desfijar
           lockedDriver = null;
           highlightedDriver = null;
           hoverSnap = null;
-          applyHighlightToChart();
-          updateDriverHighlight();
-          updateLeaderboard();
-        } else if (lockedDriver) {
+        } else {
           // Fijar este piloto (sin carrera concreta)
           lockedDriver = driver.id;
           highlightedDriver = driver.id;
           hoverSnap = null;
-          applyHighlightToChart();
-          updateDriverHighlight();
-          updateLeaderboard();
-        } else {
-          toggleDriver(driver.id);
         }
+        applyHighlightToChart();
+        updateDriverHighlight();
+        updateLeaderboard();
       });
       // Hover en lista solo actúa si no hay lock
       li.addEventListener('mouseenter', () => {
